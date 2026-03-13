@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="color-scheme" content="dark">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' wss:; frame-ancestors 'none';">
+    <title>Juju FX Quantum Terminal - Secure Login</title>
+    
+    <!-- Preconnect for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    <!-- Critical fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome (with subset for performance) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    
+    <!-- Production Tailwind (optimized) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Critical CSS inlined for performance */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #0a0a0f;
+            color: #e5e7eb;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 1rem;
+        }
+        
+        .glass {
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+        }
+        
+        .glass:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .text-neon-blue { color: #00d4ff; }
+        .text-neon-green { color: #00ff88; }
+        .text-neon-purple { color: #b829dd; }
+        
+        .bg-neon-blue { background-color: #00d4ff; }
+        .bg-neon-blue\/20 { background-color: rgba(0, 212, 255, 0.2); }
+        
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+        
+        .animate-spin-slow {
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            width: 100%;
+            font-size: 1rem;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+        
+        .input-field.error {
+            border-color: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+        }
+        
+        .input-field.valid {
+            border-color: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            cursor: pointer;
+            transition: color 0.2s;
+            z-index: 20;
+        }
+        
+        .password-toggle:hover {
+            color: #00d4ff;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #3b82f6);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -5px rgba(0, 212, 255, 0.5);
+        }
+        
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary.loading {
+            color: transparent;
+            pointer-events: none;
+        }
+        
+        .btn-primary.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin: -10px 0 0 -10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        /* Floating label animation */
+        .floating-label {
+            position: absolute;
+            left: 3rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            pointer-events: none;
+            transition: all 0.2s ease;
+            background: transparent;
+            padding: 0 4px;
+            z-index: 10;
+            font-size: 0.95rem;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-wrapper.focused .floating-label,
+        .input-wrapper.filled .floating-label {
+            top: 0;
+            transform: translateY(-50%);
+            font-size: 0.7rem;
+            color: #00d4ff;
+            background: rgba(26, 26, 46, 0.9);
+            left: 2.5rem;
+            padding: 0 6px;
+        }
+        
+        /* Session timeout warning */
+        .timeout-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            color: #f59e0b;
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            min-width: 300px;
+            text-align: center;
+        }
+        
+        .timeout-warning.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translate(-50%, -10px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .glass, .btn-primary, .animate-pulse-slow, .timeout-warning {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .glass {
+                padding: 1.5rem;
+            }
+            
+            .input-field {
+                padding: 0.75rem 1rem 0.75rem 2.5rem;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .floating-label {
+                left: 2.5rem;
+            }
+        }
+        
+        /* Password strength meter */
+        .strength-meter {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .strength-bar {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s ease;
+        }
+        
+        .strength-bar.weak { background: #ef4444; width: 25%; }
+        .strength-bar.fair { background: #f59e0b; width: 50%; }
+        .strength-bar.good { background: #10b981; width: 75%; }
+        .strength-bar.strong { background: #10b981; width: 100%; }
+        
+        /* Validation icons */
+        .valid-icon, .error-icon {
+            z-index: 20;
+        }
+        
+        /* Modal styles */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        /* Toast container */
+        .toast-container {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 350px;
+        }
+        
+        .toast {
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        /* Hidden utility */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-black to-gray-900">
+    
+    <!-- Background Effects with reduced motion consideration -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse-slow motion-reduce:animate-none"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse-slow motion-reduce:animate-none" style="animation-delay: 1.5s;"></div>
+    </div>
+    
+    <!-- Session Timeout Warning (if applicable) -->
+    {% if session_expires_soon %}
+    <div class="timeout-warning show" id="sessionWarning" role="alert">
+        <i class="fas fa-clock mr-2"></i>
+        Your session expires soon. Please log in again if needed.
+        <button onclick="this.parentElement.classList.remove('show')" class="ml-2 text-yellow-400 hover:text-yellow-300 bg-transparent border-0 cursor-pointer">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    {% endif %}
+    
+    <!-- Login Card -->
+    <div class="relative z-10 w-full max-w-md px-4">
+        <div class="glass rounded-3xl p-8 shadow-2xl">
+            <!-- Logo with animation -->
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/30 group hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-dragon text-white text-3xl group-hover:animate-pulse"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-wider">JUJU<span class="text-cyan-400">FX</span></h1>
+                <p class="text-gray-400 text-sm mt-2 font-mono">QUANTUM TERMINAL v9.1</p>
+                <p class="text-xs text-gray-600 mt-1 font-mono">LIVE • SECURE • ENCRYPTED • FIPS 140-2</p>
+            </div>
+            
+            <!-- Error Message with Animation -->
+            {% if error %}
+            <div class="mb-6 p-4 rounded-xl bg-red-500/20 border border-red-500/50 text-red-400 text-sm text-center animate-[slideIn_0.3s_ease]" role="alert" id="errorMessage">
+                <i class="fas fa-exclamation-circle mr-2"></i>
+                {{ error }}
+                <button onclick="this.parentElement.style.display='none'" class="ml-2 text-red-400 hover:text-red-300 bg-transparent border-0 cursor-pointer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            {% endif %}
+            
+            <!-- Login Form -->
+            <form method="POST" action="{{ url_for('login') }}" class="space-y-6" id="loginForm" novalidate>
+                <!-- CSRF Token - IMPORTANT: This hidden input is required -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                
+                <!-- Username Field with Floating Label -->
+                <div class="relative input-wrapper" id="username-wrapper">
+                    <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10"></i>
+                    <label for="username" class="floating-label">Username</label>
+                    <input type="text" id="username" name="username" 
+                           class="input-field w-full pl-12 pr-4 py-4 rounded-xl text-white placeholder-transparent"
+                           placeholder=" " 
+                           value="{% if request.form.username %}{{ request.form.username }}{% endif %}"
+                           autocomplete="off"
+                           aria-label="Username"
+                           autofocus
+                           maxlength="50"
+                           pattern="[a-zA-Z0-9_.-]+"
+                           title="Username can only contain letters, numbers, dots, underscores and hyphens"
+                           required>
+                    <!-- Validation Icons (hidden by default) -->
+                    <i class="fas fa-check-circle absolute right-4 top-1/2 -translate-y-1/2 text-green-500 hidden valid-icon"></i>
+                    <i class="fas fa-exclamation-circle absolute right-4 top-1/2 -translate-y-1/2 text-red-500 hidden error-icon"></i>
+                </div>
+                
+                <!-- Password Field with Toggle and Strength Meter -->
+                <div class="relative input-wrapper" id="password-wrapper">
+                    <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10"></i>
+                    <label for="password" class="floating-label">Password</label>
+                    <input type="password" id="password" name="password" 
+                           class="input-field w-full pl-12 pr-12 py-4 rounded-xl text-white placeholder-transparent"
+                           placeholder=" "
+                           autocomplete="off"
+                           aria-label="Password"
+                           minlength="8"
+                           required>
+                    <!-- Password Toggle -->
+                    <i class="fas fa-eye password-toggle" id="togglePassword" role="button" tabindex="0" aria-label="Show password"></i>
+                    
+                    <!-- Password Strength Meter (hidden initially) -->
+                    <div class="strength-meter hidden" id="strengthMeter">
+                        <div class="strength-bar" id="strengthBar"></div>
+                    </div>
+                </div>
+                
+                <!-- Remember Me & Forgot Password -->
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center space-x-2 text-gray-400 cursor-pointer select-none">
+                        <input type="checkbox" name="remember" id="remember" class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0">
+                        <span>Remember this device</span>
+                    </label>
+                    <button type="button" class="text-cyan-400 hover:text-cyan-300 transition-colors bg-transparent border-0 cursor-pointer text-sm" onclick="showForgotPassword()">
+                        Forgot password?
+                    </button>
+                </div>
+                
+                <!-- Submit Button with Loading State -->
+                <button type="submit" id="loginButton" class="btn-primary w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span class="inline-flex items-center justify-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        ACCESS TERMINAL
+                    </span>
+                </button>
+                
+                <!-- Rate Limit Warning (Hidden by default) -->
+                <div id="rateLimitWarning" class="text-center text-xs text-yellow-500 hidden" role="alert">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    Too many attempts. Please wait <span id="waitTime">30</span> seconds.
+                </div>
+            </form>
+            
+            <!-- Quick Tips -->
+            <div class="mt-6 space-y-3">
+                <!-- Info message -->
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <p class="text-xs text-gray-400 text-center font-mono">
+                        <i class="fas fa-info-circle mr-1 text-cyan-400"></i>
+                        Contact administrator for credentials
+                    </p>
+                </div>
+                
+                <!-- Security Badge -->
+                <div class="flex items-center justify-center space-x-4 text-xs text-gray-600">
+                    <span><i class="fas fa-shield-alt mr-1"></i> 256-bit SSL</span>
+                    <span><i class="fas fa-lock mr-1"></i> Encrypted</span>
+                    <span><i class="fas fa-clock mr-1"></i> Session: 30min</span>
+                    <span><i class="fas fa-fingerprint mr-1"></i> 2FA Ready</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer with Motto -->
+        <p class="text-center text-gray-500 text-xs mt-8 font-mono">
+            NEVER SAY DIE • CHAMPIONS KEEP MOVING FORWARD
+        </p>
+    </div>
+    
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container" role="alert" aria-live="polite"></div>
+    
+    <!-- Forgot Password Modal (Hidden by default) -->
+    <div id="forgotPasswordModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="glass rounded-3xl p-8 modal-content">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 mx-auto rounded-full bg-cyan-500/20 flex items-center justify-center mb-4">
+                    <i class="fas fa-key text-cyan-400 text-2xl"></i>
+                </div>
+                <h3 id="modalTitle" class="text-xl font-bold text-white">Reset Password</h3>
+                <p class="text-sm text-gray-400 mt-2">Enter your email to receive reset instructions</p>
+            </div>
+            
+            <form id="forgotPasswordForm" onsubmit="handleForgotPassword(event)">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="relative mb-6">
+                    <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10"></i>
+                    <input type="email" id="resetEmail" name="email" required
+                           class="input-field w-full pl-12 pr-4 py-4 rounded-xl text-white"
+                           placeholder="Email address"
+                           pattern="[^@]+@[^@]+\.[^@]+"
+                           maxlength="100">
+                </div>
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="hideForgotPassword()" 
+                            class="flex-1 py-3 rounded-xl border border-gray-600 text-gray-400 hover:bg-gray-800 transition-colors bg-transparent cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit" id="resetButton" 
+                            class="flex-1 py-3 rounded-xl bg-cyan-500 text-white hover:bg-cyan-600 transition-colors font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        Send Reset Link
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // ===========================================
+        // SECURE LOGIN PAGE - v2.0 (Security Hardened)
+        // ===========================================
+        
+        (function() {
+            'use strict';
+            
+            // Configuration
+            const CONFIG = {
+                minPasswordLength: 8,
+                maxAttempts: 5,
+                lockoutTime: 30, // seconds
+                sessionTimeout: 1800, // 30 minutes
+                warningTime: 120, // Show warning 2 minutes before timeout
+                passwordPattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/,
+                usernamePattern: /^[a-zA-Z0-9_.-]{3,50}$/
+            };
+            
+            // State
+            let loginAttempts = 0;
+            let lockoutTimer = null;
+            
+            // DOM Elements
+            const form = document.getElementById('loginForm');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const loginButton = document.getElementById('loginButton');
+            const togglePassword = document.getElementById('togglePassword');
+            const rateLimitWarning = document.getElementById('rateLimitWarning');
+            const waitTimeSpan = document.getElementById('waitTime');
+            const strengthMeter = document.getElementById('strengthMeter');
+            const strengthBar = document.getElementById('strengthBar');
+            const rememberCheckbox = document.getElementById('remember');
+            
+            // ===========================================
+            // FLOATING LABEL EFFECT
+            // ===========================================
+            function setupFloatingLabels() {
+                const wrappers = document.querySelectorAll('.input-wrapper');
+                
+                wrappers.forEach(wrapper => {
+                    const input = wrapper.querySelector('input');
+                    if (!input) return;
+                    
+                    // Check initial state
+                    if (input.value) {
+                        wrapper.classList.add('filled');
+                    }
+                    
+                    // Focus events
+                    input.addEventListener('focus', () => {
+                        wrapper.classList.add('focused');
+                    });
+                    
+                    input.addEventListener('blur', () => {
+                        wrapper.classList.remove('focused');
+                        if (input.value) {
+                            wrapper.classList.add('filled');
+                        } else {
+                            wrapper.classList.remove('filled');
+                        }
+                    });
+                    
+                    // Input events for validation
+                    input.addEventListener('input', () => {
+                        validateField(input);
+                        if (input.id === 'password') {
+                            checkPasswordStrength(input.value);
+                        }
+                    });
+                });
+            }
+            
+            // ===========================================
+            // FIELD VALIDATION
+            // ===========================================
+            function validateField(input) {
+                const wrapper = input.closest('.input-wrapper');
+                const validIcon = wrapper?.querySelector('.valid-icon');
+                const errorIcon = wrapper?.querySelector('.error-icon');
+                
+                if (!wrapper) return true;
+                
+                let isValid = false;
+                
+                if (input.id === 'username') {
+                    isValid = CONFIG.usernamePattern.test(input.value.trim());
+                } else if (input.id === 'password') {
+                    isValid = input.value.length >= CONFIG.minPasswordLength;
+                }
+                
+                // Update UI
+                if (isValid) {
+                    input.classList.remove('error');
+                    input.classList.add('valid');
+                    if (validIcon) validIcon.classList.remove('hidden');
+                    if (errorIcon) errorIcon.classList.add('hidden');
+                    input.setAttribute('aria-invalid', 'false');
+                } else {
+                    input.classList.remove('valid');
+                    input.classList.add('error');
+                    if (validIcon) validIcon.classList.add('hidden');
+                    if (errorIcon) errorIcon.classList.remove('hidden');
+                    input.setAttribute('aria-invalid', 'true');
+                }
+                
+                return isValid;
+            }
+            
+            // ===========================================
+            // PASSWORD STRENGTH CHECKER
+            // ===========================================
+            function checkPasswordStrength(password) {
+                if (!password) {
+                    strengthMeter.classList.add('hidden');
+                    return;
+                }
+                
+                strengthMeter.classList.remove('hidden');
+                
+                let strength = 0;
+                
+                // Length check
+                if (password.length >= 8) strength++;
+                if (password.length >= 12) strength++;
+                
+                // Character variety
+                if (/[a-z]/.test(password)) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+                
+                // Determine strength class
+                let strengthClass = 'weak';
+                if (strength >= 5) strengthClass = 'strong';
+                else if (strength >= 4) strengthClass = 'good';
+                else if (strength >= 3) strengthClass = 'fair';
+                
+                strengthBar.className = `strength-bar ${strengthClass}`;
+            }
+            
+            // ===========================================
+            // PASSWORD VISIBILITY TOGGLE
+            // ===========================================
+            function setupPasswordToggle() {
+                togglePassword.addEventListener('click', () => {
+                    const type = passwordInput.type === 'password' ? 'text' : 'password';
+                    passwordInput.type = type;
+                    
+                    // Toggle icon
+                    togglePassword.classList.toggle('fa-eye');
+                    togglePassword.classList.toggle('fa-eye-slash');
+                    
+                    // Announce for screen readers
+                    togglePassword.setAttribute('aria-label', 
+                        type === 'password' ? 'Show password' : 'Hide password');
+                });
+                
+                // Keyboard support
+                togglePassword.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        togglePassword.click();
+                    }
+                });
+            }
+            
+            // ===========================================
+            // RATE LIMITING
+            // ===========================================
+            function incrementLoginAttempts() {
+                loginAttempts++;
+                
+                if (loginAttempts >= CONFIG.maxAttempts) {
+                    startLockout();
+                }
+            }
+            
+            function startLockout() {
+                let timeLeft = CONFIG.lockoutTime;
+                
+                // Show warning
+                rateLimitWarning.classList.remove('hidden');
+                waitTimeSpan.textContent = timeLeft;
+                loginButton.disabled = true;
+                loginButton.setAttribute('aria-disabled', 'true');
+                
+                // Start countdown
+                if (lockoutTimer) clearInterval(lockoutTimer);
+                
+                lockoutTimer = setInterval(() => {
+                    timeLeft--;
+                    waitTimeSpan.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(lockoutTimer);
+                        rateLimitWarning.classList.add('hidden');
+                        loginButton.disabled = false;
+                        loginButton.removeAttribute('aria-disabled');
+                        loginAttempts = 0;
+                    }
+                }, 1000);
+            }
+            
+            // ===========================================
+            // FORM SUBMISSION HANDLER
+            // ===========================================
+            async function handleSubmit(e) {
+                e.preventDefault();
+                
+                // Validate both fields
+                const isUsernameValid = validateField(usernameInput);
+                const isPasswordValid = validateField(passwordInput);
+                
+                if (!isUsernameValid || !isPasswordValid) {
+                    showToast('error', 'Please enter valid credentials');
+                    return;
+                }
+                
+                // Show loading state
+                loginButton.classList.add('loading');
+                loginButton.disabled = true;
+                loginButton.setAttribute('aria-busy', 'true');
+                
+                try {
+                    // Get CSRF token from hidden input (primary source)
+                    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                    
+                    if (!csrfToken) {
+                        throw new Error('Security token missing');
+                    }
+                    
+                    // Prepare form data
+                    const formData = new FormData(form);
+                    
+                    // Add remember me value
+                    formData.set('remember', rememberCheckbox.checked ? 'on' : 'off');
+                    
+                    // Submit form with timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-Token': csrfToken, // Send in header for API validation
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        signal: controller.signal,
+                        credentials: 'same-origin'
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (response.redirected) {
+                        // Successful login - redirect
+                        window.location.href = response.url;
+                    } else {
+                        // Failed login
+                        incrementLoginAttempts();
+                        
+                        let errorMsg = 'Invalid credentials';
+                        try {
+                            const text = await response.text();
+                            // Try to parse error from HTML
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = text;
+                            const errorEl = tempDiv.querySelector('[role="alert"]');
+                            if (errorEl) {
+                                errorMsg = errorEl.textContent?.trim() || errorMsg;
+                            }
+                        } catch (e) {
+                            // Ignore parse errors
+                        }
+                        
+                        showToast('error', errorMsg);
+                        
+                        // Reset loading state
+                        loginButton.classList.remove('loading');
+                        loginButton.disabled = false;
+                        loginButton.removeAttribute('aria-busy');
+                        
+                        // Clear password field for security
+                        passwordInput.value = '';
+                        passwordInput.focus();
+                        
+                        // Reset password field validation
+                        validateField(passwordInput);
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    
+                    let errorMessage = 'Connection error. Please try again.';
+                    if (error.name === 'AbortError') {
+                        errorMessage = 'Request timeout. Please try again.';
+                    }
+                    
+                    showToast('error', errorMessage);
+                    
+                    loginButton.classList.remove('loading');
+                    loginButton.disabled = false;
+                    loginButton.removeAttribute('aria-busy');
+                }
+            }
+            
+            // ===========================================
+            // TOAST NOTIFICATION SYSTEM
+            // ===========================================
+            function showToast(type, message) {
+                const container = document.getElementById('toastContainer');
+                if (!container) return;
+                
+                const toast = document.createElement('div');
+                toast.className = 'glass rounded-lg p-4 max-w-sm toast';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                
+                const icons = {
+                    success: 'check-circle',
+                    error: 'exclamation-circle',
+                    warning: 'exclamation-triangle',
+                    info: 'info-circle'
+                };
+                
+                const colors = {
+                    success: 'text-green-400',
+                    error: 'text-red-400',
+                    warning: 'text-yellow-400',
+                    info: 'text-blue-400'
+                };
+                
+                toast.innerHTML = `
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-${icons[type]} ${colors[type]} text-xl mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="text-sm text-white">${escapeHtml(message)}</p>
+                        </div>
+                        <button class="text-gray-400 hover:text-white transition-colors bg-transparent border-0 cursor-pointer" onclick="this.closest('.glass').remove()" aria-label="Close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(toast);
+                
+                // Trigger animation
+                setTimeout(() => toast.classList.add('show'), 10);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.classList.remove('show');
+                        setTimeout(() => toast.remove(), 300);
+                    }
+                }, 5000);
+            }
+            
+            // ===========================================
+            // SESSION TIMEOUT WARNING
+            // ===========================================
+            function setupSessionWarning() {
+                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                
+                fetch('/api/session/status', {
+                    headers: {
+                        'X-CSRF-Token': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.expires_in < CONFIG.warningTime && data.expires_in > 0) {
+                            showToast('warning', `Your session expires in ${data.expires_in} seconds`);
+                        }
+                    })
+                    .catch(() => {});
+            }
+            
+            // ===========================================
+            // FORGOT PASSWORD HANDLERS
+            // ===========================================
+            window.showForgotPassword = function() {
+                const modal = document.getElementById('forgotPasswordModal');
+                modal.classList.add('show');
+                document.getElementById('resetEmail').focus();
+            };
+            
+            window.hideForgotPassword = function() {
+                const modal = document.getElementById('forgotPasswordModal');
+                modal.classList.remove('show');
+                document.getElementById('forgotPasswordForm').reset();
+            };
+            
+            window.handleForgotPassword = async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('resetEmail').value;
+                const resetButton = document.getElementById('resetButton');
+                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                
+                if (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+                    showToast('error', 'Please enter a valid email address');
+                    return;
+                }
+                
+                resetButton.disabled = true;
+                resetButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending...';
+                
+                try {
+                    const response = await fetch('/api/forgot-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ email })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showToast('success', 'Reset instructions sent if email exists');
+                        hideForgotPassword();
+                    } else {
+                        showToast('error', data.error || 'Failed to send reset email');
+                    }
+                } catch (error) {
+                    showToast('error', 'Network error. Please try again.');
+                } finally {
+                    resetButton.disabled = false;
+                    resetButton.innerHTML = 'Send Reset Link';
+                }
+            };
+            
+            // ===========================================
+            // UTILITY FUNCTIONS
+            // ===========================================
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+            
+            // ===========================================
+            // KEYBOARD SHORTCUTS
+            // ===========================================
+            function setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl+Enter to submit
+                    if (e.ctrlKey && e.key === 'Enter' && document.activeElement?.form === form) {
+                        e.preventDefault();
+                        form.dispatchEvent(new Event('submit'));
+                    }
+                    
+                    // Escape to close modal
+                    if (e.key === 'Escape') {
+                        const modal = document.getElementById('forgotPasswordModal');
+                        if (modal.classList.contains('show')) {
+                            hideForgotPassword();
+                        }
+                    }
+                });
+            }
+            
+            // ===========================================
+            // CLICK OUTSIDE MODAL
+            // ===========================================
+            function setupModalClose() {
+                const modal = document.getElementById('forgotPasswordModal');
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        hideForgotPassword();
+                    }
+                });
+            }
+            
+            // ===========================================
+            // INITIALIZATION
+            // ===========================================
+            function init() {
+                setupFloatingLabels();
+                setupPasswordToggle();
+                setupKeyboardShortcuts();
+                setupModalClose();
+                
+                // Add submit handler
+                form.addEventListener('submit', handleSubmit);
+                
+                // Focus username field
+                usernameInput.focus();
+                
+                // Check session status every minute (if logged in)
+                if (document.getElementById('sessionWarning')) {
+                    setInterval(setupSessionWarning, 60000);
+                }
+                
+                // Add input validation on blur
+                usernameInput.addEventListener('blur', () => validateField(usernameInput));
+                passwordInput.addEventListener('blur', () => validateField(passwordInput));
+                
+                // Debug mode (remove in production)
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    console.log('Debug mode: Login page initialized');
+                }
+            }
+            
+            // Start when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+            
+            // Expose for global access
+            window.showToast = showToast;
+            window.escapeHtml = escapeHtml;
+            window.hideForgotPassword = hideForgotPassword;
+            window.showForgotPassword = showForgotPassword;
+            window.handleForgotPassword = handleForgotPassword;
+            
+        })();
+    </script>
+</body>
+</html>

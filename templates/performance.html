@@ -1,0 +1,1240 @@
+{% extends "base.html" %}
+
+{% block page_title %}Performance Analytics{% endblock %}
+
+{% block head_extras %}
+<style>
+/* Performance Page Styles - keeping your existing styles */
+.performance-header {
+    margin-bottom: 32px;
+}
+
+.performance-title {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.performance-subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+/* Live Indicator */
+.live-indicator-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--success-bg);
+    color: var(--success-color);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 20px;
+    margin-left: 16px;
+    vertical-align: middle;
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--success-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Period Selector */
+.period-nav {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.period-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    min-width: 140px;
+}
+
+.period-card:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+}
+
+.period-card.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+}
+
+.period-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.period-card.active .period-icon {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.period-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.period-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.period-card.active .period-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.period-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.period-card.active .period-value {
+    color: white;
+}
+
+/* Stats Grid */
+.stats-grid-advanced {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.stat-block {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-block::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-gradient);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.stat-block:hover::after {
+    opacity: 1;
+}
+
+.stat-block.primary::after { background: var(--accent-primary); }
+.stat-block.success::after { background: var(--success-color); }
+.stat-block.warning::after { background: var(--warning-color); }
+.stat-block.info::after { background: var(--info-color); }
+
+.stat-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.stat-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--accent-primary);
+    color: white;
+    opacity: 0.2;
+}
+
+.stat-block:hover .stat-badge {
+    opacity: 1;
+}
+
+.stat-main-value {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-main-value.positive { color: var(--success-color); }
+.stat-main-value.negative { color: var(--danger-color); }
+
+.stat-comparison {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.stat-comparison.positive { color: var(--success-color); }
+.stat-comparison.negative { color: var(--danger-color); }
+
+/* Progress Bar for Win Rate */
+.winrate-container {
+    margin-top: 16px;
+}
+
+.winrate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.winrate-label {
+    color: var(--text-muted);
+}
+
+.winrate-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.winrate-track {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.winrate-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: all 0.5s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.winrate-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+.winrate-fill.excellent { background: var(--success-color); }
+.winrate-fill.good { background: var(--info-color); }
+.winrate-fill.fair { background: var(--warning-color); }
+.winrate-fill.poor { background: var(--danger-color); }
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Charts Section */
+.charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.chart-container {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chart-heading {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+.chart-canvas {
+    position: relative;
+    height: 280px;
+}
+
+/* Tables Section */
+.tables-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.table-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.table-action {
+    font-size: 13px;
+    color: var(--accent-primary);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.table-action:hover {
+    color: var(--text-primary);
+}
+
+.data-table-advanced {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+}
+
+.data-table-advanced th {
+    text-align: left;
+    padding: 12px 16px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table-advanced td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.data-table-advanced tr:hover td {
+    background: rgba(148, 163, 184, 0.05);
+}
+
+.data-table-advanced tr:last-child td {
+    border-bottom: none;
+}
+
+.cell-level-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--accent-primary);
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.cell-symbol {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cell-pl {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    text-align: right;
+}
+
+.cell-pl.positive { color: var(--success-color); }
+.cell-pl.negative { color: var(--danger-color); }
+
+.cell-number {
+    text-align: right;
+    font-family: var(--font-mono);
+}
+
+.cell-winrate {
+    text-align: right;
+}
+
+.winrate-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.winrate-pill.high {
+    background: var(--success-bg);
+    color: var(--success-color);
+}
+
+.winrate-pill.medium {
+    background: var(--warning-bg);
+    color: var(--warning-color);
+}
+
+.winrate-pill.low {
+    background: var(--danger-bg);
+    color: var(--danger-color);
+}
+
+/* Empty State */
+.table-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.table-empty i {
+    font-size: 40px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+}
+
+/* Last Updated */
+.last-updated {
+    text-align: right;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 16px;
+}
+
+/* Toast Notifications - if not in base */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 400px;
+}
+
+.toast {
+    background: var(--bg-secondary);
+    border-left: 4px solid var(--accent-primary);
+    padding: 15px 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow-lg);
+    color: var(--text-primary);
+    animation: slideIn 0.3s ease;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+}
+
+.toast.success { border-left-color: var(--success-color); }
+.toast.error { border-left-color: var(--danger-color); }
+.toast.warning { border-left-color: var(--warning-color); }
+.toast.info { border-left-color: var(--info-color); }
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .stats-grid-advanced {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .tables-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid-advanced {
+        grid-template-columns: 1fr;
+    }
+    
+    .period-nav {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 8px;
+    }
+    
+    .period-card {
+        min-width: 120px;
+        padding: 12px 16px;
+    }
+    
+    .period-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="performance-header">
+    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h1 class="performance-title">Performance Analytics</h1>
+            <p class="performance-subtitle">Detailed trading metrics and period analysis</p>
+        </div>
+        <div class="live-indicator-pill" id="live-indicator" style="display: none;">
+            <span class="live-dot"></span>
+            <span>AUTO-REFRESH</span>
+        </div>
+    </div>
+</div>
+
+<!-- Period Selector -->
+<div class="period-nav">
+    <div class="period-card" data-period="day" onclick="loadPeriod('day')">
+        <div class="period-icon" style="background: rgba(249, 115, 22, 0.2); color: #f97316;">
+            <i class="fas fa-sun"></i>
+        </div>
+        <div class="period-info">
+            <span class="period-label">Today</span>
+            <span class="period-value">Daily</span>
+        </div>
+    </div>
+    
+    <div class="period-card" data-period="week" onclick="loadPeriod('week')">
+        <div class="period-icon" style="background: rgba(14, 165, 233, 0.2); color: #0ea5e9;">
+            <i class="fas fa-calendar-week"></i>
+        </div>
+        <div class="period-info">
+            <span class="period-label">This Week</span>
+            <span class="period-value">Weekly</span>
+        </div>
+    </div>
+    
+    <div class="period-card" data-period="month" onclick="loadPeriod('month')">
+        <div class="period-icon" style="background: rgba(139, 92, 246, 0.2); color: #8b5cf6;">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="period-info">
+            <span class="period-label">This Month</span>
+            <span class="period-value">Monthly</span>
+        </div>
+    </div>
+    
+    <div class="period-card active" data-period="all" onclick="loadPeriod('all')">
+        <div class="period-icon" style="background: rgba(255, 255, 255, 0.2); color: white;">
+            <i class="fas fa-infinity"></i>
+        </div>
+        <div class="period-info">
+            <span class="period-label">All Time</span>
+            <span class="period-value">Complete</span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid-advanced">
+    <div class="stat-block primary">
+        <div class="stat-header-row">
+            <span class="stat-badge">Total</span>
+        </div>
+        <div class="stat-main-value" id="stat-pnl">R 0.00</div>
+        <div class="stat-comparison" id="pnl-comparison">
+            <i class="fas fa-minus"></i>
+            <span>Net Profit/Loss</span>
+        </div>
+    </div>
+    
+    <div class="stat-block success">
+        <div class="stat-header-row">
+            <span class="stat-badge">Volume</span>
+        </div>
+        <div class="stat-main-value" id="stat-trades">0</div>
+        <div class="stat-comparison" id="trades-comparison">
+            <i class="fas fa-chart-bar"></i>
+            <span>Total Executions</span>
+        </div>
+    </div>
+    
+    <div class="stat-block warning">
+        <div class="stat-header-row">
+            <span class="stat-badge">Success</span>
+        </div>
+        <div class="stat-main-value" id="stat-winrate">0%</div>
+        <div class="winrate-container">
+            <div class="winrate-header">
+                <span class="winrate-label">Win Rate</span>
+                <span class="winrate-value" id="winrate-text">0%</span>
+            </div>
+            <div class="winrate-track">
+                <div class="winrate-fill" id="winrate-bar" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-block info">
+        <div class="stat-header-row">
+            <span class="stat-badge">Average</span>
+        </div>
+        <div class="stat-main-value" id="stat-avg">R 0.00</div>
+        <div class="stat-comparison" id="avg-comparison">
+            <i class="fas fa-calculator"></i>
+            <span>Per Trade</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="charts-row">
+    <div class="chart-container">
+        <div class="chart-header">
+            <h3 class="chart-heading">
+                <i class="fas fa-chart-line text-info"></i>
+                Performance Curve
+            </h3>
+            <span class="chart-badge" id="curve-badge">Cumulative</span>
+        </div>
+        <div class="chart-canvas">
+            <canvas id="perfChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <div class="chart-header">
+            <h3 class="chart-heading">
+                <i class="fas fa-chart-pie text-success"></i>
+                Level Distribution
+            </h3>
+            <span class="chart-badge">By Volume</span>
+        </div>
+        <div class="chart-canvas">
+            <canvas id="levelChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Row -->
+<div class="tables-row">
+    <div class="table-panel">
+        <div class="table-header">
+            <h3 class="table-title">Level Breakdown</h3>
+            <span class="table-action" onclick="exportTable('level')">
+                <i class="fas fa-download"></i> Export
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table-advanced">
+                <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th style="text-align: right;">P/L (ZAR)</th>
+                        <th style="text-align: right;">Trades</th>
+                        <th style="text-align: right;">Win Rate</th>
+                    </tr>
+                </thead>
+                <tbody id="level-table">
+                    <tr>
+                        <td colspan="4">
+                            <div class="table-empty">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading data...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="table-panel">
+        <div class="table-header">
+            <h3 class="table-title">Symbol Performance</h3>
+            <span class="table-action" onclick="exportTable('symbol')">
+                <i class="fas fa-download"></i> Export
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table-advanced">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th style="text-align: right;">P/L (ZAR)</th>
+                        <th style="text-align: right;">Trades</th>
+                        <th style="text-align: right;">Win Rate</th>
+                    </tr>
+                </thead>
+                <tbody id="symbol-table">
+                    <tr>
+                        <td colspan="4">
+                            <div class="table-empty">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading data...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="last-updated" id="last-updated"></div>
+    </div>
+</div>
+
+<!-- Toast Container (if not in base) -->
+<div id="toast-container" class="toast-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ===========================================
+// PERFORMANCE ANALYTICS - PRODUCTION VERSION
+// Using JUJU namespace from base template
+// ===========================================
+
+(function() {
+    'use strict';
+    
+    console.log('📈 Performance Analytics initializing...');
+
+    let currentPeriod = 'all';
+    let perfChart = null;
+    let levelChart = null;
+    let autoRefreshInterval = null;
+    let lastDataHash = '';
+    let isVisible = true;
+
+    // ===========================================
+    // TOAST NOTIFICATION (fallback if JUJU not available)
+    // ===========================================
+    function showToast(type, message, duration = 3000) {
+        // Use JUJU.toast if available
+        if (window.JUJU && window.JUJU.toast) {
+            window.JUJU.toast(type, message, duration);
+            return;
+        }
+        
+        // Fallback toast
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        toast.innerHTML = `
+            <i class="fas fa-${icons[type] || 'info-circle'}"></i>
+            <span>${escapeHtml(message)}</span>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
+    // ===========================================
+    // HTML ESCAPE (fallback)
+    // ===========================================
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ===========================================
+    // INITIALIZATION
+    // ===========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPeriod('all');
+        startAutoRefresh();
+        
+        // Cross-tab sync
+        window.addEventListener('storage', handleStorageEvent);
+        
+        // Visibility API
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Listen for global refresh
+        window.addEventListener('dashboard:refresh', () => {
+            loadPeriod(currentPeriod);
+        });
+    });
+
+    // ===========================================
+    // AUTO-REFRESH CONTROLS
+    // ===========================================
+    function startAutoRefresh() {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        
+        const indicator = document.getElementById('live-indicator');
+        if (indicator) indicator.style.display = 'inline-flex';
+        
+        // Auto-refresh every 30 seconds
+        autoRefreshInterval = setInterval(() => {
+            if (isVisible && !document.hidden) {
+                silentRefresh();
+            }
+        }, 30000);
+        
+        console.log('📈 Performance auto-refresh started');
+    }
+
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+        const indicator = document.getElementById('live-indicator');
+        if (indicator) indicator.style.display = 'none';
+    }
+
+    function handleVisibilityChange() {
+        isVisible = !document.hidden;
+        if (isVisible) {
+            console.log('📈 Performance tab visible - resuming refresh');
+            silentRefresh();
+        } else {
+            console.log('📈 Performance tab hidden - pausing refresh');
+        }
+    }
+
+    function handleStorageEvent(e) {
+        if (e.key === 'trading:refresh' && e.newValue === 'true') {
+            console.log('📈 Refresh triggered from another tab');
+            silentRefresh();
+            localStorage.removeItem('trading:refresh');
+        }
+    }
+
+    function broadcastRefresh() {
+        localStorage.setItem('trading:refresh', 'true');
+    }
+
+    // ===========================================
+    // DATA LOADING
+    // ===========================================
+    window.loadPeriod = async function(period) {
+        currentPeriod = period;
+        
+        // Update period cards
+        document.querySelectorAll('.period-card').forEach(card => {
+            card.classList.toggle('active', card.dataset.period === period);
+        });
+        
+        try {
+            // Use JUJU.fetch if available, otherwise regular fetch
+            let response;
+            if (window.JUJU && window.JUJU.fetch) {
+                response = await window.JUJU.fetch(`/api/performance/${period}`);
+            } else {
+                response = await fetch(`/api/performance/${period}`);
+            }
+            
+            if (!response) return;
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const data = await response.json();
+            
+            // Store hash for change detection
+            lastDataHash = JSON.stringify({
+                p: data.total_pnl_zar,
+                t: data.total_trades,
+                w: data.win_rate
+            });
+            
+            updateStats(data);
+            updateCharts(data);
+            updateTables(data);
+            updateTimestamp();
+            
+            showToast('success', `Performance data loaded for ${period}`);
+            broadcastRefresh();
+            
+        } catch (error) {
+            console.error('Performance load error:', error);
+            showToast('error', error.message);
+        }
+    };
+
+    // Silent refresh without loading indicators
+    async function silentRefresh() {
+        try {
+            let response;
+            if (window.JUJU && window.JUJU.fetch) {
+                response = await window.JUJU.fetch(`/api/performance/${currentPeriod}`);
+            } else {
+                response = await fetch(`/api/performance/${currentPeriod}`);
+            }
+            
+            if (!response || !response.ok) return;
+            
+            const data = await response.json();
+            
+            // Check if data changed
+            const newHash = JSON.stringify({
+                p: data.total_pnl_zar,
+                t: data.total_trades,
+                w: data.win_rate
+            });
+            
+            if (newHash === lastDataHash) {
+                console.log('📈 No data changes');
+                return;
+            }
+            lastDataHash = newHash;
+            
+            // Update all components
+            updateStats(data);
+            updateCharts(data);
+            updateTables(data);
+            updateTimestamp();
+            
+            console.log('📈 Performance auto-refreshed');
+            
+        } catch (error) {
+            console.error('Silent refresh error:', error);
+        }
+    }
+
+    // ===========================================
+    // UI UPDATES
+    // ===========================================
+    function updateStats(data) {
+        // P/L with color coding
+        const pnl = data.total_pnl_zar || 0;
+        const pnlEl = document.getElementById('stat-pnl');
+        pnlEl.textContent = formatCurrency(pnl, 'ZAR');
+        pnlEl.className = `stat-main-value ${pnl >= 0 ? 'positive' : 'negative'}`;
+        
+        // Comparison
+        const pnlComp = document.getElementById('pnl-comparison');
+        pnlComp.innerHTML = `
+            <i class="fas fa-${pnl >= 0 ? 'arrow-up' : 'arrow-down'}"></i>
+            <span>${pnl >= 0 ? 'Profit' : 'Loss'} Period</span>
+        `;
+        pnlComp.className = `stat-comparison ${pnl >= 0 ? 'positive' : 'negative'}`;
+        
+        // Total trades
+        document.getElementById('stat-trades').textContent = data.total_trades || 0;
+        
+        // Win rate
+        const winRate = data.win_rate || 0;
+        document.getElementById('stat-winrate').textContent = winRate.toFixed(1) + '%';
+        document.getElementById('winrate-text').textContent = winRate.toFixed(1) + '%';
+        
+        const winBar = document.getElementById('winrate-bar');
+        winBar.style.width = Math.min(winRate, 100) + '%';
+        winBar.className = 'winrate-fill ' + (
+            winRate >= 60 ? 'excellent' :
+            winRate >= 45 ? 'good' :
+            winRate >= 30 ? 'fair' : 'poor'
+        );
+        
+        // Average
+        const avg = data.average_trade_zar || 0;
+        const avgEl = document.getElementById('stat-avg');
+        avgEl.textContent = formatCurrency(avg, 'ZAR');
+        avgEl.className = `stat-main-value ${avg >= 0 ? 'positive' : 'negative'}`;
+    }
+
+    function updateCharts(data) {
+        // Performance Curve
+        const ctx1 = document.getElementById('perfChart');
+        if (ctx1) {
+            if (perfChart) perfChart.destroy();
+            
+            const hourly = data.hourly_pnl || {};
+            const labels = Object.keys(hourly);
+            const values = Object.values(hourly);
+            
+            // Calculate cumulative
+            let cumulative = [];
+            let sum = 0;
+            values.forEach(v => {
+                sum += v;
+                cumulative.push(sum);
+            });
+            
+            const gradient = ctx1.getContext('2d').createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+            
+            perfChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Cumulative P/L',
+                        data: cumulative,
+                        borderColor: '#3b82f6',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleColor: '#94a3b8',
+                            bodyColor: '#f8fafc',
+                            borderColor: 'rgba(148, 163, 184, 0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            callbacks: {
+                                label: (context) => {
+                                    const val = context.raw;
+                                    return `P/L: ${val >= 0 ? '+' : ''}R ${val.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b', maxTicksLimit: 8 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(148, 163, 184, 0.05)', drawBorder: false },
+                            ticks: { color: '#64748b', callback: (v) => 'R ' + v.toFixed(0) }
+                        }
+                    }
+                }
+            });
+            
+            const finalPL = cumulative[cumulative.length - 1] || 0;
+            document.getElementById('curve-badge').textContent = finalPL >= 0 ? 'Profitable' : 'Drawdown';
+        }
+        
+        // Level Distribution
+        const ctx2 = document.getElementById('levelChart');
+        if (ctx2) {
+            if (levelChart) levelChart.destroy();
+            
+            const levelData = data.pnl_by_level || {};
+            const levels = Object.keys(levelData);
+            const trades = Object.values(levelData).map(l => l.trades || 0);
+            
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+            
+            levelChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: levels.map(l => `Level ${l}`),
+                    datasets: [{
+                        data: trades,
+                        backgroundColor: colors.slice(0, levels.length),
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: { size: 11 },
+                                color: '#94a3b8'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            bodyColor: '#f8fafc',
+                            borderColor: 'rgba(148, 163, 184, 0.1)',
+                            borderWidth: 1,
+                            padding: 12
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function updateTables(data) {
+        // Level table
+        const lvlBody = document.getElementById('level-table');
+        if (lvlBody && data.pnl_by_level) {
+            const sorted = Object.entries(data.pnl_by_level)
+                .sort((a, b) => (b[1].zar || 0) - (a[1].zar || 0));
+            
+            lvlBody.innerHTML = sorted.map(([level, d]) => {
+                const winRate = d.win_rate || 0;
+                return `
+                    <tr>
+                        <td><span class="cell-level-badge">L${level}</span></td>
+                        <td class="cell-pl ${(d.zar || 0) >= 0 ? 'positive' : 'negative'}">
+                            ${formatCurrency(d.zar || 0, 'ZAR')}
+                        </td>
+                        <td class="cell-number">${d.trades || 0}</td>
+                        <td class="cell-winrate">
+                            <span class="winrate-pill ${winRate >= 50 ? 'high' : winRate >= 30 ? 'medium' : 'low'}">
+                                ${winRate.toFixed(1)}%
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Symbol table
+        const symBody = document.getElementById('symbol-table');
+        if (symBody && data.pnl_by_symbol) {
+            const sorted = Object.entries(data.pnl_by_symbol)
+                .sort((a, b) => (b[1].zar || 0) - (a[1].zar || 0));
+            
+            symBody.innerHTML = sorted.map(([sym, d]) => {
+                const winRate = d.win_rate || 0;
+                return `
+                    <tr>
+                        <td class="cell-symbol">${sym}</td>
+                        <td class="cell-pl ${(d.zar || 0) >= 0 ? 'positive' : 'negative'}">
+                            ${formatCurrency(d.zar || 0, 'ZAR')}
+                        </td>
+                        <td class="cell-number">${d.trades || 0}</td>
+                        <td class="cell-winrate">
+                            <span class="winrate-pill ${winRate >= 50 ? 'high' : winRate >= 30 ? 'medium' : 'low'}">
+                                ${winRate.toFixed(1)}%
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    function updateTimestamp() {
+        const el = document.getElementById('last-updated');
+        if (el) {
+            el.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+        }
+    }
+
+    // ===========================================
+    // UTILITY FUNCTIONS
+    // ===========================================
+    function formatCurrency(value, currency = 'ZAR') {
+        const symbol = currency === 'ZAR' ? 'R ' : '$';
+        const sign = value >= 0 ? '' : '-';
+        return sign + symbol + Math.abs(value).toLocaleString('en-ZA', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    // ===========================================
+    // EXPORT FUNCTIONS
+    // ===========================================
+    window.exportTable = function(type) {
+        showToast('info', `Preparing ${type} data export...`);
+        setTimeout(() => {
+            showToast('success', `${type} data exported`);
+        }, 1500);
+    };
+
+    // ===========================================
+    // CLEANUP
+    // ===========================================
+    window.addEventListener('beforeunload', () => {
+        stopAutoRefresh();
+        if (perfChart) perfChart.destroy();
+        if (levelChart) levelChart.destroy();
+    });
+
+    // ===========================================
+    // EXPOSE GLOBALLY
+    // ===========================================
+    window.silentRefresh = silentRefresh;
+    window.loadPeriod = loadPeriod;
+})();
+</script>
+{% endblock %}

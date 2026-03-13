@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Juju FX EA Manager{% endblock %}
+
+{% block login_content %}
+<div class="login-container">
+    <div class="login-card fade-in">
+        <div class="login-header">
+            <h1><i class="fas fa-chart-line"></i> Juju FX</h1>
+            <p>EA Trading Manager • Professional Dashboard</p>
+        </div>
+        
+        <div class="login-body">
+            {% if error %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> {{ error }}
+            </div>
+            {% endif %}
+            
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="form-group">
+                    <label for="username">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <input type="text" class="form-control" id="username" name="username" 
+                           placeholder="Enter username" required autofocus>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <input type="password" class="form-control" id="password" name="password" 
+                           placeholder="Enter password" required>
+                </div>
+                
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="remember">
+                    <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+                
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                </button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="fas fa-shield-alt"></i> Secure HTTPS Connection
+                </small>
+            </div>
+        </div>
+        
+        <div class="login-footer text-center p-3 border-top">
+            <small class="text-muted">
+                &copy; 2024 Juju FX Trading System • Version 3.0 • All trades involve risk
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}

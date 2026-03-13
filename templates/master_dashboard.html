@@ -1,0 +1,2393 @@
+{% extends "base.html" %}
+
+{% block page_title %}Master Control • IB Management{% endblock %}
+
+{% block head_extras %}
+<!-- Add CSRF token meta tag -->
+<meta name="csrf-token" content="{{ csrf_token }}">
+<!-- Add Chart.js if not already included in base -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<style>
+    /* ===========================================
+       MASTER DASHBOARD STYLES - COMPLETE
+       =========================================== */
+    
+    /* Master Dashboard Grid Layout */
+    .master-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1.5fr 1.2fr;
+        gap: 24px;
+        margin-top: 24px;
+    }
+
+    /* Column styling */
+    .grid-col {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    /* Master Cards */
+    .master-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .master-card:hover {
+        border-color: var(--border-hover);
+        box-shadow: var(--card-shadow-lg);
+    }
+
+    .card-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255,255,255,0.02);
+    }
+
+    .card-header h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+
+    .card-header h3 i {
+        color: var(--accent-primary);
+        font-size: 1.1rem;
+    }
+
+    .card-actions, .header-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .filter-select {
+        padding: 8px 12px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        cursor: pointer;
+        min-width: 120px;
+    }
+
+    .btn-refresh, .btn-icon {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-refresh:hover, .btn-icon:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .btn-refresh:hover {
+        transform: rotate(180deg);
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    /* Master Header */
+    .master-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .header-left h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0;
+    }
+
+    .master-badge {
+        padding: 4px 12px;
+        background: var(--accent-primary);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .system-time {
+        font-family: var(--font-mono);
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .system-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--bg-tertiary);
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+
+    .status-dot.online {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success-color);
+        box-shadow: 0 0 10px var(--success-color);
+        animation: pulse 2s infinite;
+    }
+
+    /* EA Grid */
+    .ea-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .ea-card {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s;
+    }
+
+    .ea-card:hover {
+        border-color: var(--accent-primary);
+        transform: translateX(4px);
+    }
+
+    .ea-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .ea-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+
+    .ea-status {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: var(--success-bg);
+        color: var(--success-color);
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .ea-symbol {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+        font-family: var(--font-mono);
+    }
+
+    .ea-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .ea-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .ea-stat .label {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    .ea-stat .value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+    }
+
+    .ea-footer {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .ea-level {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        background: var(--accent-primary);
+        color: white;
+        border-radius: 4px;
+        font-weight: 600;
+    }
+
+    /* Period Selector */
+    .period-selector {
+        display: flex;
+        gap: 4px;
+        background: var(--bg-tertiary);
+        padding: 4px;
+        border-radius: 8px;
+    }
+
+    .period-btn {
+        padding: 6px 12px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .period-btn.active {
+        background: var(--accent-primary);
+        color: white;
+    }
+
+    /* Level Stats */
+    .level-stats-grid {
+        margin-top: 20px;
+    }
+
+    /* Health Grid */
+    .health-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .health-item {
+        text-align: center;
+    }
+
+    .health-label {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .health-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+    }
+
+    /* System Events */
+    .system-events {
+        border-top: 1px solid var(--border-color);
+        padding-top: 16px;
+    }
+
+    .system-events h4 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+
+    .event-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .event-time {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    .event-desc {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+    }
+
+    /* User Management */
+    .header-tabs {
+        display: flex;
+        gap: 4px;
+        background: var(--bg-tertiary);
+        padding: 4px;
+        border-radius: 8px;
+    }
+
+    .tab-btn {
+        padding: 6px 12px;
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+        background: var(--accent-primary);
+        color: white;
+    }
+
+    /* User Stats Row */
+    .user-stats-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-item .stat-label {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .stat-item .stat-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+    }
+
+    /* Search Container */
+    .search-container {
+        margin-bottom: 15px;
+    }
+
+    /* Master Table */
+    .master-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+
+    .master-table th {
+        text-align: left;
+        padding: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+    }
+
+    .master-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-secondary);
+    }
+
+    .master-table tbody tr:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .user-type {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: var(--info-bg);
+        color: var(--info-color);
+        text-transform: uppercase;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .status-badge.pending {
+        background: var(--warning-bg);
+        color: var(--warning-color);
+    }
+
+    .status-badge.active {
+        background: var(--success-bg);
+        color: var(--success-color);
+    }
+
+    .status-badge.suspended {
+        background: var(--danger-bg);
+        color: var(--danger-color);
+    }
+
+    .user-actions {
+        display: flex;
+        gap: 4px;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .action-btn:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .action-btn.success:hover {
+        background: var(--success-bg);
+        color: var(--success-color);
+        border-color: var(--success-color);
+    }
+
+    .action-btn.danger:hover {
+        background: var(--danger-bg);
+        color: var(--danger-color);
+        border-color: var(--danger-color);
+    }
+
+    .action-btn.warning:hover {
+        background: var(--warning-bg);
+        color: var(--warning-color);
+        border-color: var(--warning-color);
+    }
+
+    /* Pagination */
+    .pagination-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .page-btn {
+        min-width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .page-btn:hover:not(:disabled) {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .page-btn.active {
+        background: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+    }
+
+    .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .page-dots {
+        color: var(--text-muted);
+        padding: 0 4px;
+    }
+
+    /* IB Commission Summary */
+    .commission-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+    }
+
+    .summary-item {
+        text-align: center;
+    }
+
+    .summary-item .label {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .summary-item .value {
+        font-size: 1rem;
+        font-weight: 600;
+        font-family: var(--font-mono);
+    }
+
+    .summary-item.total .value { color: var(--info-color); }
+    .summary-item.paid .value { color: var(--success-color); }
+    .summary-item.pending .value { color: var(--warning-color); }
+
+    /* IB List */
+    .ib-list {
+        margin-bottom: 20px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .ib-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .ib-item:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .ib-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .ib-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--accent-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: white;
+        font-size: 0.9rem;
+    }
+
+    .ib-details .name {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+
+    .ib-details .clients {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    .ib-commission {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+        margin-bottom: 4px;
+        text-align: right;
+    }
+
+    /* Commission Progress */
+    .commission-progress {
+        height: 4px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 2px;
+        margin-top: 4px;
+    }
+    
+    .commission-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981, #059669);
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+
+    /* Sub Headings */
+    .sub-heading {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 16px 0 12px;
+    }
+
+    /* Personal Performance Card */
+    .personal-card {
+        background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+    }
+
+    .personal-stats {
+        margin-bottom: 16px;
+    }
+
+    .stat-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+
+    .stat-block {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--accent-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .stat-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-content .stat-label {
+        font-size: 0.6rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    .stat-content .stat-number {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+    }
+
+    .badge-master {
+        padding: 4px 12px;
+        background: var(--accent-primary);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.8);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-container {
+        background: var(--bg-secondary);
+        border-radius: 16px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+    }
+
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .close-modal:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        padding: 20px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .form-input, .form-select {
+        width: 100%;
+        padding: 12px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--accent-primary);
+    }
+
+    .form-input:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Button Styles */
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .btn-primary {
+        background: var(--accent-primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+    }
+
+    .btn-secondary:hover {
+        background: rgba(255,255,255,0.1);
+    }
+
+    .btn-danger {
+        background: var(--danger-color);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #dc2626;
+    }
+
+    /* Badge Styles */
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: var(--success-bg);
+        color: var(--success-color);
+    }
+
+    .badge-warning {
+        background: var(--warning-bg);
+        color: var(--warning-color);
+    }
+
+    .badge-danger {
+        background: var(--danger-bg);
+        color: var(--danger-color);
+    }
+
+    .badge-info {
+        background: var(--info-bg);
+        color: var(--info-color);
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255,255,255,0.1);
+        border-top-color: var(--accent-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    /* Text Utilities */
+    .text-success { color: var(--success-color); }
+    .text-danger { color: var(--danger-color); }
+    .text-warning { color: var(--warning-color); }
+    .text-info { color: var(--info-color); }
+    .text-muted { color: var(--text-muted); }
+    .text-center { text-align: center; }
+
+    /* Animations */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .master-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .master-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .user-stats-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .commission-summary {
+            grid-template-columns: 1fr;
+        }
+        
+        .stat-row {
+            grid-template-columns: 1fr;
+        }
+
+        .header-tabs {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Master Dashboard Layout -->
+<div class="master-dashboard" 
+     data-current-level="{{ current_level }}"
+     data-csrf-token="{{ csrf_token }}">
+    
+    <!-- Header with Quick Stats -->
+    <div class="master-header">
+        <div class="header-left">
+            <h1><i class="fas fa-crown"></i> Master Control Center</h1>
+            <div class="master-badge">IB Management v9.1</div>
+        </div>
+        <div class="header-right">
+            <div class="system-time" id="master-clock"></div>
+            <div class="system-status" id="system-health-badge">
+                <span class="status-dot online"></span>
+                System Operational
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="master-grid">
+        <!-- LEFT COLUMN - EA Performance & System Health -->
+        <div class="grid-col col-left">
+            <!-- EA Performance Card -->
+            <div class="master-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-robot"></i> EA Performance Overview</h3>
+                    <div class="card-actions">
+                        <select id="ea-filter-status" class="filter-select">
+                            <option value="all">All EAs</option>
+                            <option value="running">Running</option>
+                            <option value="paused">Paused</option>
+                            <option value="error">Error</option>
+                        </select>
+                        <button class="btn-refresh" onclick="loadEAs()" title="Refresh EAs">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="ea-grid" id="ea-grid-container">
+                        <!-- Loaded via JS -->
+                        <div class="text-center"><span class="loading-spinner"></span> Loading EAs...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Level Performance Card -->
+            <div class="master-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-layer-group"></i> Level Performance Analysis</h3>
+                    <div class="period-selector">
+                        <button class="period-btn" data-period="day" onclick="loadLevelPerformance('day')">24H</button>
+                        <button class="period-btn" data-period="week" onclick="loadLevelPerformance('week')">7D</button>
+                        <button class="period-btn active" data-period="month" onclick="loadLevelPerformance('month')">30D</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="levelPerformanceChart" height="200"></canvas>
+                    <div class="level-stats-grid" id="level-stats-container">
+                        <!-- Dynamic level stats -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Health Card -->
+            <div class="master-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-heartbeat"></i> System Health</h3>
+                </div>
+                <div class="card-body">
+                    <div class="health-grid">
+                        <div class="health-item">
+                            <span class="health-label">Database</span>
+                            <span class="health-value" id="db-size">0 MB</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Active Sessions</span>
+                            <span class="health-value" id="active-sessions">0</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Current Level</span>
+                            <span class="health-value" id="system-level">{{ current_level }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Security Events -->
+                    <div class="system-events">
+                        <h4>Recent Security Events</h4>
+                        <div id="security-events-list">
+                            <div class="text-muted text-center">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE COLUMN - User Management -->
+        <div class="grid-col col-middle">
+            <!-- User Management Card -->
+            <div class="master-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-users"></i> User Management</h3>
+                    <div class="header-actions">
+                        <div class="header-tabs">
+                            <button class="tab-btn active" data-tab="all">All</button>
+                            <button class="tab-btn" data-tab="pending">Pending</button>
+                            <button class="tab-btn" data-tab="active">Active</button>
+                            <button class="tab-btn" data-tab="suspended">Suspended</button>
+                            <button class="tab-btn" data-tab="ib">IBs</button>
+                        </div>
+                        <button class="btn-icon" onclick="showCreateUserModal()" title="Create User">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Search Bar -->
+                    <div class="search-container">
+                        <input type="text" id="user-search" class="filter-select" placeholder="Search users..." style="width: 100%;">
+                    </div>
+                    
+                    <!-- User Stats Summary -->
+                    <div class="user-stats-row">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Users</span>
+                            <span class="stat-value" id="total-users">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Active Today</span>
+                            <span class="stat-value" id="active-today">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">IB Partners</span>
+                            <span class="stat-value" id="total-ibs">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Pending</span>
+                            <span class="stat-value" id="pending-users">0</span>
+                        </div>
+                    </div>
+
+                    <!-- User Table -->
+                    <div class="table-responsive">
+                        <table class="master-table" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Plan</th>
+                                    <th>Trades</th>
+                                    <th>P&L</th>
+                                    <th>Last Active</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <tr><td colspan="8" class="text-center">Loading users...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="users-pagination"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN - IB Commissions & Performance -->
+        <div class="grid-col col-right">
+            <!-- IB Commission Card -->
+            <div class="master-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-coins"></i> IB Commission Dashboard</h3>
+                    <div class="commission-period">
+                        <select id="commission-period" class="filter-select">
+                            <option value="day">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month" selected>This Month</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Commission Summary -->
+                    <div class="commission-summary">
+                        <div class="summary-item total">
+                            <span class="label">Total Commissions</span>
+                            <span class="value" id="total-commission">R 0</span>
+                        </div>
+                        <div class="summary-item paid">
+                            <span class="label">Paid</span>
+                            <span class="value" id="paid-commission">R 0</span>
+                        </div>
+                        <div class="summary-item pending">
+                            <span class="label">Pending</span>
+                            <span class="value" id="pending-commission">R 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Top IBs List -->
+                    <h4 class="sub-heading">Top Performing IBs</h4>
+                    <div class="ib-list" id="top-ibs-container">
+                        <div class="text-muted text-center">Loading...</div>
+                    </div>
+
+                    <!-- Recent Commission Transactions -->
+                    <h4 class="sub-heading">Recent Commissions</h4>
+                    <div class="commission-list" id="recent-commissions">
+                        <div class="text-muted text-center">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Personal Performance Card -->
+            <div class="master-card personal-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-user-tie"></i> My Performance (Master)</h3>
+                    <span class="badge-master">PRIMARY ACCOUNT</span>
+                </div>
+                <div class="card-body">
+                    <div class="personal-stats">
+                        <div class="stat-row">
+                            <div class="stat-block">
+                                <span class="stat-icon"><i class="fas fa-chart-line"></i></span>
+                                <div class="stat-content">
+                                    <span class="stat-label">Total P&L (ZAR)</span>
+                                    <span class="stat-number" id="my-total-pnl">R 0</span>
+                                </div>
+                            </div>
+                            <div class="stat-block">
+                                <span class="stat-icon"><i class="fas fa-percentage"></i></span>
+                                <div class="stat-content">
+                                    <span class="stat-label">Win Rate</span>
+                                    <span class="stat-number" id="my-win-rate">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-block">
+                                <span class="stat-icon"><i class="fas fa-robot"></i></span>
+                                <div class="stat-content">
+                                    <span class="stat-label">Active EAs</span>
+                                    <span class="stat-number" id="my-active-eas">0</span>
+                                </div>
+                            </div>
+                            <div class="stat-block">
+                                <span class="stat-icon"><i class="fas fa-calendar-day"></i></span>
+                                <div class="stat-content">
+                                    <span class="stat-label">Today's Trades</span>
+                                    <span class="stat-number" id="my-today-trades">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Mini Performance Chart -->
+                    <canvas id="myPerformanceChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal-overlay" id="createUserModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Create New User</h3>
+            <button class="close-modal" onclick="hideModal('createUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="createUserForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                
+                <div class="form-group">
+                    <label class="form-label">Username *</label>
+                    <input type="text" name="username" class="form-input" required pattern="[a-zA-Z0-9_.-]{3,50}" title="3-50 characters, letters, numbers, underscore, dot, hyphen">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" name="email" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password *</label>
+                    <input type="password" name="password" class="form-input" required minlength="8">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">User Type</label>
+                    <select name="user_type" class="form-select">
+                        <option value="member">Member</option>
+                        <option value="ib">IB</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="pending">Pending</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Commission Rate (%)</label>
+                    <input type="number" name="commission_rate" class="form-input" step="0.1" min="0" max="100" value="0">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideModal('createUserModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="createUser()">Create User</button>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal-overlay" id="userDetailsModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>User Details</h3>
+            <button class="close-modal" onclick="hideModal('userDetailsModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="userDetailsContent">
+            <!-- Dynamic content -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideModal('userDetailsModal')">Close</button>
+            <button class="btn btn-primary" onclick="editUser(currentUserId)">Edit User</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay" id="editUserModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Edit User</h3>
+            <button class="close-modal" onclick="hideModal('editUserModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editUserForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="user_id" id="edit_user_id">
+                
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="edit_username" class="form-input" readonly disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" id="edit_email" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" id="edit_full_name" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">User Type</label>
+                    <select name="user_type" id="edit_user_type" class="form-select">
+                        <option value="member">Member</option>
+                        <option value="ib">IB</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" id="edit_status" class="form-select">
+                        <option value="pending">Pending</option>
+                        <option value="active">Active</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Subscription Plan</label>
+                    <select name="subscription_plan" id="edit_plan" class="form-select">
+                        <option value="trial">Trial</option>
+                        <option value="basic">Basic</option>
+                        <option value="pro">Pro</option>
+                        <option value="vip">VIP</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Commission Rate (%)</label>
+                    <input type="number" name="commission_rate" id="edit_commission_rate" class="form-input" step="0.1" min="0" max="100">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" id="edit_phone" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Country</label>
+                    <input type="text" name="country" id="edit_country" class="form-input">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideModal('editUserModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="updateUser()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Confirmation Modal -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-container" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3 id="confirmTitle">Confirm Action</h3>
+            <button class="close-modal" onclick="hideModal('confirmModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Are you sure?</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideModal('confirmModal')">Cancel</button>
+            <button class="btn btn-danger" id="confirmButton" onclick="executeConfirmedAction()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ===========================================
+// MASTER DASHBOARD v9.1 - COMPLETE
+// ===========================================
+
+(function() {
+    'use strict';
+    
+    console.log('🚀 Master Dashboard initializing...');
+
+    // ===========================================
+    // CONFIGURATION
+    // ===========================================
+    const Config = {
+        currentLevel: {{ current_level }},
+        apiEndpoints: {
+            eas: '/api/ea/instances',
+            users: '/api/users',
+            ibCommissions: '/api/ib/commissions',
+            myPerformance: '/api/my/performance',
+            systemHealth: '/api/system/health',
+            levelPerformance: '/api/performance',
+            createUser: '/api/users',
+            userDetails: '/api/users/',
+            updateUser: '/api/users/',
+            resetUserApi: '/api/users/',
+            suspendUser: '/api/users/'
+        },
+        refreshIntervals: {
+            standard: 30000,
+            health: 60000
+        }
+    };
+
+    // ===========================================
+    // STATE MANAGEMENT
+    // ===========================================
+    const State = {
+        currentPage: 1,
+        currentTab: 'all',
+        currentPeriod: 'month',
+        currentUserId: null,
+        pendingAction: null,
+        performanceChart: null,
+        levelChart: null,
+        myChart: null,
+        users: [],
+        eas: [],
+        commissions: {},
+        health: {}
+    };
+
+    window.currentUserId = null;
+
+    // ===========================================
+    // DOM UTILITIES
+    // ===========================================
+    const DOM = {
+        get: (id) => document.getElementById(id),
+        query: (selector) => document.querySelector(selector),
+        queryAll: (selector) => document.querySelectorAll(selector),
+        
+        setText: (id, text) => {
+            const el = DOM.get(id);
+            if (el) el.textContent = text;
+        },
+        
+        setHTML: (id, html) => {
+            const el = DOM.get(id);
+            if (el) el.innerHTML = html;
+        },
+        
+        show: (id) => {
+            const el = DOM.get(id);
+            if (el) el.classList.add('active');
+        },
+        
+        hide: (id) => {
+            const el = DOM.get(id);
+            if (el) el.classList.remove('active');
+        }
+    };
+
+    // ===========================================
+    // INITIALIZATION
+    // ===========================================
+    function init() {
+        console.log('Master Dashboard loading data...');
+        
+        loadEAs();
+        loadUsers(1);
+        loadIBCommissions();
+        loadMyPerformance();
+        loadSystemHealth();
+        loadLevelPerformance('month');
+        
+        initEventListeners();
+        startAutoRefresh();
+        
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        setupSearchDebounce();
+    }
+
+    // ===========================================
+    // CLOCK
+    // ===========================================
+    function updateClock() {
+        const clockEl = DOM.get('master-clock');
+        if (clockEl) {
+            clockEl.textContent = new Date().toLocaleString();
+        }
+    }
+
+    // ===========================================
+    // EVENT LISTENERS
+    // ===========================================
+    function initEventListeners() {
+        DOM.queryAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                DOM.queryAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                State.currentTab = e.target.dataset.tab;
+                loadUsers(1);
+            });
+        });
+        
+        const periodSelect = DOM.get('commission-period');
+        if (periodSelect) {
+            periodSelect.addEventListener('change', loadIBCommissions);
+        }
+        
+        const eaFilter = DOM.get('ea-filter-status');
+        if (eaFilter) {
+            eaFilter.addEventListener('change', () => filterEAs(eaFilter.value));
+        }
+        
+        const searchInput = DOM.get('user-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', debouncedSearch);
+        }
+        
+        DOM.queryAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modal = e.target.closest('.modal-overlay');
+                if (modal) modal.classList.remove('active');
+            });
+        });
+        
+        DOM.queryAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    }
+
+    // ===========================================
+    // SEARCH DEBOUNCE
+    // ===========================================
+    let searchTimeout;
+    function debouncedSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => loadUsers(1), 500);
+    }
+
+    function setupSearchDebounce() {}
+
+    // ===========================================
+    // AUTO REFRESH
+    // ===========================================
+    let refreshTimers = {};
+
+    function startAutoRefresh() {
+        refreshTimers.eas = setInterval(() => {
+            if (document.visibilityState === 'visible') loadEAs(false);
+        }, Config.refreshIntervals.standard);
+        
+        refreshTimers.health = setInterval(() => {
+            if (document.visibilityState === 'visible') loadSystemHealth(false);
+        }, Config.refreshIntervals.health);
+    }
+
+    function stopAutoRefresh() {
+        Object.values(refreshTimers).forEach(timer => clearInterval(timer));
+    }
+
+    // ===========================================
+    // EA MANAGEMENT
+    // ===========================================
+    async function loadEAs(showLoading = true) {
+        try {
+            const data = await API.get(Config.apiEndpoints.eas);
+            State.eas = data.eas || [];
+            renderEAs(State.eas);
+        } catch (error) {
+            console.error('Load EAs error:', error);
+            showToast('error', 'Failed to load EA data');
+        }
+    }
+
+    function renderEAs(eas) {
+        const container = DOM.get('ea-grid-container');
+        if (!container) return;
+        
+        if (!eas || eas.length === 0) {
+            container.innerHTML = '<div class="empty-state">No EAs configured</div>';
+            return;
+        }
+        
+        let html = '';
+        eas.forEach(ea => {
+            const pnlClass = (ea.pnl_24h_zar || 0) >= 0 ? 'text-success' : 'text-danger';
+            html += `
+                <div class="ea-card ${ea.status || ''}">
+                    <div class="ea-header">
+                        <span class="ea-name">${escapeHtml(ea.symbol || '')}</span>
+                        <span class="ea-status">${escapeHtml(ea.status || '')}</span>
+                    </div>
+                    <div class="ea-symbol">${escapeHtml(ea.name || '')}</div>
+                    <div class="ea-stats">
+                        <div class="ea-stat">
+                            <span class="label">Trades</span>
+                            <span class="value">${ea.total_trades || 0}</span>
+                        </div>
+                        <div class="ea-stat">
+                            <span class="label">Win Rate</span>
+                            <span class="value">${(ea.win_rate || 0).toFixed(1)}%</span>
+                        </div>
+                        <div class="ea-stat">
+                            <span class="label">24h P&L</span>
+                            <span class="value ${pnlClass}">R ${(ea.pnl_24h_zar || 0).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="ea-footer">
+                        <span class="ea-level">Level ${ea.current_level || 0}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    function filterEAs(status) {
+        if (status === 'all') {
+            renderEAs(State.eas);
+        } else {
+            const filtered = State.eas.filter(ea => ea.status === status);
+            renderEAs(filtered);
+        }
+    }
+
+    // ===========================================
+    // USER MANAGEMENT
+    // ===========================================
+    async function loadUsers(page = 1) {
+        State.currentPage = page;
+        
+        const search = DOM.get('user-search')?.value || '';
+        const url = `${Config.apiEndpoints.users}?page=${page}&status=${State.currentTab}&search=${encodeURIComponent(search)}`;
+        
+        try {
+            const data = await API.get(url);
+            State.users = data.users || [];
+            renderUsers(State.users, data.pagination);
+            updateUserStats(data);
+        } catch (error) {
+            console.error('Load users error:', error);
+            showToast('error', 'Failed to load users');
+        }
+    }
+
+    function renderUsers(users, pagination) {
+        const tbody = DOM.get('users-table-body');
+        if (!tbody) return;
+        
+        if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No users found</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        users.forEach(user => {
+            const pnlClass = (user.total_pnl || 0) >= 0 ? 'text-success' : 'text-danger';
+            const lastActive = user.last_active ? new Date(user.last_active).toLocaleString() : 'Never';
+            
+            html += `
+                <tr>
+                    <td>
+                        <div><strong>${escapeHtml(user.full_name || user.username || '')}</strong></div>
+                        <small class="text-muted">${escapeHtml(user.email || '')}</small>
+                    </td>
+                    <td><span class="user-type">${escapeHtml(user.user_type || '')}</span></td>
+                    <td><span class="status-badge ${user.status || ''}">${escapeHtml(user.status || '')}</span></td>
+                    <td>${escapeHtml(user.subscription_plan || '')}</td>
+                    <td>${user.total_trades || 0}</td>
+                    <td class="${pnlClass}">R ${(user.total_pnl || 0).toFixed(2)}</td>
+                    <td>${lastActive}</td>
+                    <td class="user-actions">
+                        <button class="action-btn" onclick="viewUser(${user.id})" title="View">
+                            <i class="fas fa-eye"></i>
+                        </button>
+            `;
+            
+            if (user.status === 'pending') {
+                html += `
+                    <button class="action-btn success" onclick="confirmAction('approve', ${user.id})" title="Approve">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="action-btn danger" onclick="confirmAction('reject', ${user.id})" title="Reject">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+            } else {
+                html += `
+                    <button class="action-btn" onclick="editUser(${user.id})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="action-btn" onclick="resetUserApi(${user.id})" title="Reset API">
+                        <i class="fas fa-key"></i>
+                    </button>
+                `;
+                
+                if (user.status === 'active') {
+                    html += `
+                        <button class="action-btn warning" onclick="confirmAction('suspend', ${user.id})" title="Suspend">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                    `;
+                }
+            }
+            
+            html += '</td></tr>';
+        });
+        
+        tbody.innerHTML = html;
+        renderPagination(pagination);
+    }
+
+    function renderPagination(pagination) {
+        const container = DOM.get('users-pagination');
+        if (!container) return;
+        
+        if (!pagination || pagination.pages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        let html = '<div class="pagination-controls">';
+        
+        if (pagination.page > 1) {
+            html += `<button class="page-btn" onclick="loadUsers(${pagination.page - 1})">
+                <i class="fas fa-chevron-left"></i>
+            </button>`;
+        }
+        
+        for (let i = 1; i <= pagination.pages; i++) {
+            if (i === pagination.page || i === 1 || i === pagination.pages || Math.abs(i - pagination.page) <= 2) {
+                html += `<button class="page-btn ${i === pagination.page ? 'active' : ''}" 
+                    onclick="loadUsers(${i})">${i}</button>`;
+            } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+                html += '<span class="page-dots">...</span>';
+            }
+        }
+        
+        if (pagination.page < pagination.pages) {
+            html += `<button class="page-btn" onclick="loadUsers(${pagination.page + 1})">
+                <i class="fas fa-chevron-right"></i>
+            </button>`;
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    function updateUserStats(data) {
+        const users = data.users || [];
+        DOM.setText('total-users', data.pagination?.total || 0);
+        DOM.setText('pending-users', users.filter(u => u.status === 'pending').length);
+        DOM.setText('total-ibs', users.filter(u => u.user_type === 'ib').length);
+    }
+
+    // ===========================================
+    // USER ACTIONS
+    // ===========================================
+    window.viewUser = async function(userId) {
+        try {
+            const data = await API.get(Config.apiEndpoints.userDetails + userId);
+            const user = data.user || {};
+            
+            const content = `
+                <div style="margin-bottom: 20px;">
+                    <h4>${escapeHtml(user.full_name || user.username)}</h4>
+                    <p><strong>Email:</strong> ${escapeHtml(user.email || '')}</p>
+                    <p><strong>Type:</strong> ${escapeHtml(user.user_type || '')}</p>
+                    <p><strong>Status:</strong> <span class="badge badge-${user.status}">${escapeHtml(user.status || '')}</span></p>
+                    <p><strong>Plan:</strong> ${escapeHtml(user.subscription_plan || '')}</p>
+                    <p><strong>Commission Rate:</strong> ${user.commission_rate || 0}%</p>
+                    <p><strong>Joined:</strong> ${new Date(user.created_at).toLocaleDateString()}</p>
+                </div>
+            `;
+            
+            DOM.setHTML('userDetailsContent', content);
+            window.currentUserId = userId;
+            DOM.show('userDetailsModal');
+        } catch (error) {
+            showToast('error', 'Failed to load user details');
+        }
+    };
+
+    window.showCreateUserModal = function() {
+        DOM.show('createUserModal');
+    };
+
+    window.createUser = async function() {
+        const form = DOM.get('createUserForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        if (data.password.length < 8) {
+            showToast('error', 'Password must be at least 8 characters');
+            return;
+        }
+        
+        try {
+            const result = await API.post(Config.apiEndpoints.createUser, data);
+            if (result.success) {
+                showToast('success', 'User created successfully');
+                DOM.hide('createUserModal');
+                form.reset();
+                loadUsers(1);
+            }
+        } catch (error) {
+            showToast('error', error.message || 'Failed to create user');
+        }
+    };
+
+    window.editUser = async function(userId) {
+        try {
+            const data = await API.get(Config.apiEndpoints.userDetails + userId);
+            const user = data.user || {};
+            
+            DOM.get('edit_user_id').value = user.id;
+            DOM.get('edit_username').value = user.username || '';
+            DOM.get('edit_email').value = user.email || '';
+            DOM.get('edit_full_name').value = user.full_name || '';
+            DOM.get('edit_user_type').value = user.user_type || 'member';
+            DOM.get('edit_status').value = user.status || 'pending';
+            DOM.get('edit_plan').value = user.subscription_plan || 'trial';
+            DOM.get('edit_commission_rate').value = user.commission_rate || 0;
+            DOM.get('edit_phone').value = user.phone || '';
+            DOM.get('edit_country').value = user.country || '';
+            
+            window.currentUserId = userId;
+            DOM.show('editUserModal');
+        } catch (error) {
+            showToast('error', 'Failed to load user data');
+        }
+    };
+
+    window.updateUser = async function() {
+        const userId = window.currentUserId;
+        const form = DOM.get('editUserForm');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        try {
+            const result = await API.put(Config.apiEndpoints.updateUser + userId, data);
+            if (result.success) {
+                showToast('success', 'User updated successfully');
+                DOM.hide('editUserModal');
+                loadUsers(State.currentPage);
+            }
+        } catch (error) {
+            showToast('error', error.message || 'Failed to update user');
+        }
+    };
+
+    window.resetUserApi = async function(userId) {
+        try {
+            const result = await API.post(Config.apiEndpoints.resetUserApi + userId + '/reset-api', {});
+            if (result.success) {
+                showToast('success', `New API Key: ${result.api_key.substring(0, 20)}...`);
+            }
+        } catch (error) {
+            showToast('error', 'Failed to reset API key');
+        }
+    };
+
+    // ===========================================
+    // CONFIRMATION ACTIONS
+    // ===========================================
+    window.confirmAction = function(action, userId) {
+        window.currentUserId = userId;
+        State.pendingAction = action;
+        
+        const titles = {
+            approve: 'Approve User',
+            reject: 'Reject User',
+            suspend: 'Suspend User'
+        };
+        
+        const messages = {
+            approve: 'Are you sure you want to approve this user?',
+            reject: 'Are you sure you want to reject this user?',
+            suspend: 'Are you sure you want to suspend this user?'
+        };
+        
+        DOM.setText('confirmTitle', titles[action] || 'Confirm Action');
+        DOM.setText('confirmMessage', messages[action] || 'Are you sure?');
+        
+        const confirmBtn = DOM.get('confirmButton');
+        confirmBtn.className = action === 'approve' ? 'btn btn-primary' : 'btn btn-danger';
+        confirmBtn.textContent = action.charAt(0).toUpperCase() + action.slice(1);
+        
+        DOM.show('confirmModal');
+    };
+
+    window.executeConfirmedAction = async function() {
+        const userId = window.currentUserId;
+        const action = State.pendingAction;
+        
+        try {
+            let result;
+            if (action === 'approve') {
+                result = await API.put(Config.apiEndpoints.updateUser + userId, { status: 'active' });
+            } else if (action === 'reject') {
+                result = await API.put(Config.apiEndpoints.updateUser + userId, { status: 'rejected' });
+            } else if (action === 'suspend') {
+                result = await API.post(Config.apiEndpoints.suspendUser + userId + '/suspend', {});
+            }
+            
+            if (result?.success) {
+                showToast('success', `User ${action}ed successfully`);
+                DOM.hide('confirmModal');
+                loadUsers(State.currentPage);
+            }
+        } catch (error) {
+            showToast('error', `Failed to ${action} user`);
+        }
+        
+        State.pendingAction = null;
+    };
+
+    // ===========================================
+    // IB COMMISSIONS
+    // ===========================================
+    async function loadIBCommissions() {
+        const period = DOM.get('commission-period')?.value || 'month';
+        
+        try {
+            const data = await API.get(`${Config.apiEndpoints.ibCommissions}?period=${period}`);
+            State.commissions = data;
+            renderIBCommissions(data);
+        } catch (error) {
+            console.error('Load commissions error:', error);
+        }
+    }
+
+    function renderIBCommissions(data) {
+        DOM.setText('total-commission', `R ${(data.total_all || 0).toFixed(2)}`);
+        
+        let paid = 0, pending = 0;
+        (data.commissions || []).forEach(ib => {
+            paid += ib.paid_commission || 0;
+            pending += ib.pending_commission || 0;
+        });
+        
+        DOM.setText('paid-commission', `R ${paid.toFixed(2)}`);
+        DOM.setText('pending-commission', `R ${pending.toFixed(2)}`);
+        
+        const ibContainer = DOM.get('top-ibs-container');
+        if (ibContainer) {
+            if (data.commissions?.length > 0) {
+                let html = '';
+                data.commissions.slice(0, 5).forEach(ib => {
+                    const initial = (ib.ib_name || 'U').charAt(0);
+                    const progress = (ib.paid_commission / (ib.total_commission || 1)) * 100;
+                    
+                    html += `
+                        <div class="ib-item">
+                            <div class="ib-info">
+                                <div class="ib-avatar">${escapeHtml(initial)}</div>
+                                <div class="ib-details">
+                                    <div class="name">${escapeHtml(ib.ib_name || '')}</div>
+                                    <div class="clients">${ib.total_clients || 0} clients</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="ib-commission">R ${(ib.total_commission || 0).toFixed(2)}</div>
+                                <div class="commission-progress">
+                                    <div class="commission-progress-bar" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                ibContainer.innerHTML = html;
+            } else {
+                ibContainer.innerHTML = '<div class="empty-state">No IB data</div>';
+            }
+        }
+        
+        const recentContainer = DOM.get('recent-commissions');
+        if (recentContainer) {
+            if (data.recent?.length > 0) {
+                let html = '';
+                data.recent.slice(0, 5).forEach(comm => {
+                    const date = comm.earned_date ? new Date(comm.earned_date).toLocaleDateString() : '';
+                    html += `
+                        <div class="ib-item">
+                            <div class="ib-info">
+                                <div class="ib-details">
+                                    <div class="name">
+                                        ${escapeHtml(comm.ib_username || '')} → ${escapeHtml(comm.client_username || '')}
+                                    </div>
+                                    <div class="clients">${date}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="ib-commission">R ${(comm.commission_amount || 0).toFixed(2)}</div>
+                                <span class="badge badge-${comm.status}">${escapeHtml(comm.status || '')}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                recentContainer.innerHTML = html;
+            } else {
+                recentContainer.innerHTML = '<div class="empty-state">No recent commissions</div>';
+            }
+        }
+    }
+
+    // ===========================================
+    // MY PERFORMANCE
+    // ===========================================
+    async function loadMyPerformance() {
+        try {
+            const data = await API.get(Config.apiEndpoints.myPerformance);
+            renderMyPerformance(data);
+        } catch (error) {
+            console.error('Load my performance error:', error);
+        }
+    }
+
+    function renderMyPerformance(data) {
+        const summary = data.summary || {};
+        
+        DOM.setText('my-total-pnl', `R ${(summary.total_pnl_zar || 0).toFixed(2)}`);
+        DOM.setText('my-win-rate', `${(summary.win_rate || 0).toFixed(1)}%`);
+        DOM.setText('my-active-eas', summary.active_eas || 0);
+        DOM.setText('my-today-trades', data.today_trades || 0);
+        
+        renderMyPerformanceChart(data.daily || []);
+    }
+
+    function renderMyPerformanceChart(daily) {
+        const ctx = DOM.get('myPerformanceChart');
+        if (!ctx) return;
+        
+        if (State.myChart) State.myChart.destroy();
+        
+        const last7Days = daily.slice(0, 7).reverse();
+        const labels = last7Days.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('en-ZA', { weekday: 'short' });
+        });
+        const values = last7Days.map(d => (d.pnl_usd || 0) * 18.5);
+        
+        State.myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Daily P&L (ZAR)',
+                    data: values,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: values.map(v => v >= 0 ? '#10b981' : '#ef4444'),
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { grid: { display: false } }, y: { display: false } }
+            }
+        });
+    }
+
+    // ===========================================
+    // LEVEL PERFORMANCE
+    // ===========================================
+    async function loadLevelPerformance(period) {
+        State.currentPeriod = period;
+        
+        DOM.queryAll('.period-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.period === period);
+        });
+        
+        try {
+            const data = await API.get(`${Config.apiEndpoints.levelPerformance}/${period}`);
+            renderLevelChart(data);
+            renderLevelStats(data);
+        } catch (error) {
+            console.error('Load level performance error:', error);
+        }
+    }
+
+    function renderLevelChart(data) {
+        const ctx = DOM.get('levelPerformanceChart');
+        if (!ctx) return;
+        
+        if (State.levelChart) State.levelChart.destroy();
+        
+        const pnlByLevel = data.pnl_by_level || {};
+        const levels = Object.keys(pnlByLevel).sort((a, b) => parseInt(a) - parseInt(b));
+        const values = levels.map(l => pnlByLevel[l]?.zar || 0);
+        
+        State.levelChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: levels.map(l => `Level ${l}`),
+                datasets: [{
+                    label: 'P&L by Level (ZAR)',
+                    data: values,
+                    backgroundColor: values.map(v => v >= 0 ? '#10b981' : '#ef4444'),
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: (value) => `R ${value.toFixed(0)}` }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderLevelStats(data) {
+        const container = DOM.get('level-stats-container');
+        if (!container) return;
+        
+        const levels = data.pnl_by_level || {};
+        let html = '<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 15px;">';
+        
+        for (let i = 0; i < 7; i++) {
+            const levelData = levels[i.toString()] || { trades: 0, win_rate: 0, zar: 0 };
+            html += `
+                <div style="text-align: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 5px;">L${i}</div>
+                    <div style="font-weight: 700; font-size: 0.9rem;">${levelData.trades || 0}</div>
+                    <div style="font-size: 0.65rem; ${(levelData.zar || 0) >= 0 ? 'color: #10b981;' : 'color: #ef4444;'}">
+                        R ${(levelData.zar || 0).toFixed(0)}
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // ===========================================
+    // SYSTEM HEALTH
+    // ===========================================
+    async function loadSystemHealth(showToast = false) {
+        try {
+            const data = await API.get(Config.apiEndpoints.systemHealth);
+            State.health = data;
+            renderSystemHealth(data);
+        } catch (error) {
+            console.error('Load system health error:', error);
+        }
+    }
+
+    function renderSystemHealth(data) {
+        DOM.setText('db-size', `${(data.system?.database_size_mb || 0).toFixed(1)} MB`);
+        DOM.setText('active-sessions', data.users?.active_now || 0);
+        DOM.setText('system-level', data.system?.current_level || Config.currentLevel);
+        
+        const eventsList = DOM.get('security-events-list');
+        if (eventsList) {
+            if (data.recent_security_events?.length > 0) {
+                let html = '';
+                data.recent_security_events.slice(0, 5).forEach(event => {
+                    const time = event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : '';
+                    html += `
+                        <div class="event-item">
+                            <span class="event-time">${time}</span>
+                            <span class="event-desc">${escapeHtml(event.event_type)}</span>
+                        </div>
+                    `;
+                });
+                eventsList.innerHTML = html;
+            } else {
+                eventsList.innerHTML = '<div class="empty-state">No recent security events</div>';
+            }
+        }
+    }
+
+    // ===========================================
+    // API CLIENT
+    // ===========================================
+    const API = {
+        async request(endpoint, options = {}) {
+            if (window.JUJU && window.JUJU.fetch) {
+                try {
+                    const response = await window.JUJU.fetch(endpoint, options);
+                    if (!response) return null;
+                    return await response.json();
+                } catch (error) {
+                    console.error(`API Error (${endpoint}):`, error);
+                    throw error;
+                }
+            }
+            
+            const url = endpoint;
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            };
+            
+            try {
+                const response = await fetch(url, { ...defaultOptions, ...options });
+                
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return null;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error(`API Error (${endpoint}):`, error);
+                throw error;
+            }
+        },
+        
+        get: (endpoint) => API.request(endpoint, { method: 'GET' }),
+        post: (endpoint, data) => API.request(endpoint, { method: 'POST', body: JSON.stringify(data) }),
+        put: (endpoint, data) => API.request(endpoint, { method: 'PUT', body: JSON.stringify(data) })
+    };
+
+    // ===========================================
+    // TOAST NOTIFICATION SYSTEM
+    // ===========================================
+    function showToast(type, message, duration = 4000) {
+        if (window.JUJU && window.JUJU.toast) {
+            window.JUJU.toast(type, message, duration);
+            return;
+        }
+        
+        const container = DOM.get('toastContainer');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        const icons = {
+            success: 'check-circle',
+            error: 'exclamation-circle',
+            warning: 'exclamation-triangle',
+            info: 'info-circle'
+        };
+        
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-${icons[type]}" style="font-size: 20px;"></i>
+                <span>${escapeHtml(message)}</span>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
+    // ===========================================
+    // MODAL UTILITIES
+    // ===========================================
+    window.hideModal = function(modalId) {
+        DOM.hide(modalId);
+    };
+
+    // ===========================================
+    // UTILITY FUNCTIONS
+    // ===========================================
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ===========================================
+    // CLEANUP
+    // ===========================================
+    window.addEventListener('beforeunload', () => {
+        stopAutoRefresh();
+        if (State.levelChart) State.levelChart.destroy();
+        if (State.myChart) State.myChart.destroy();
+    });
+
+    // ===========================================
+    // EXPOSE GLOBALLY
+    // ===========================================
+    window.loadEAs = loadEAs;
+    window.loadUsers = loadUsers;
+    window.loadIBCommissions = loadIBCommissions;
+    window.loadLevelPerformance = loadLevelPerformance;
+
+    // ===========================================
+    // INITIALIZE
+    // ===========================================
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+{% endblock %}

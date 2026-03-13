@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}JUJU FX Trading System{% endblock %}</title>
+    
+    <!-- CSRF Token Meta Tag -->
+    <meta name="csrf-token" content="{{ csrf_token if csrf_token else '' }}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --border-color: #334155;
+            --border-hover: #475569;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --card-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
+            --radius-full: 9999px;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition-fast: 0.2s ease;
+            --transition-base: 0.3s ease;
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 12px;
+            --space-lg: 16px;
+            --space-xl: 20px;
+            --space-2xl: 24px;
+            --space-3xl: 32px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform var(--transition-base);
+        }
+
+        .sidebar-header {
+            padding: var(--space-2xl);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--space-xs);
+        }
+
+        .sidebar-header .version {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: var(--space-xl) 0;
+        }
+
+        .nav-section {
+            padding: var(--space-md) var(--space-2xl) var(--space-xs);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md) var(--space-2xl);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            margin-left: auto;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: var(--success-bg);
+            color: var(--success-color);
+        }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            padding: var(--space-xl) var(--space-2xl);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .system-status {
+            margin-bottom: var(--space-md);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-xs);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.online {
+            background: var(--success-color);
+            box-shadow: 0 0 10px var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: var(--danger-color);
+        }
+
+        .status-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .footer-clock {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--space-md) var(--space-2xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        .page-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .page-title i {
+            color: var(--accent-primary);
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xl);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+        }
+
+        .mobile-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            cursor: pointer;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-lg);
+            transition: background var(--transition-fast);
+        }
+
+        .user-menu:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .user-role {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: var(--space-2xl);
+            flex: 1;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-full);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-primary);
+        }
+
+        /* Toast Container */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: var(--bg-secondary);
+            border-left: 4px solid var(--accent-primary);
+            padding: 15px 20px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--card-shadow-lg);
+            color: var(--text-primary);
+            animation: slideIn 0.3s ease;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .toast.success { border-left-color: var(--success-color); }
+        .toast.error { border-left-color: var(--danger-color); }
+        .toast.warning { border-left-color: var(--warning-color); }
+        .toast.info { border-left-color: var(--info-color); }
+
+        .toast i {
+            font-size: 1.2rem;
+        }
+
+        .toast.success i { color: var(--success-color); }
+        .toast.error i { color: var(--danger-color); }
+        .toast.warning i { color: var(--warning-color); }
+        .toast.info i { color: var(--info-color); }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Utility Classes */
+        .text-success { color: var(--success-color); }
+        .text-warning { color: var(--warning-color); }
+        .text-danger { color: var(--danger-color); }
+        .text-info { color: var(--info-color); }
+        .text-muted { color: var(--text-muted); }
+        
+        .bg-success { background: var(--success-bg); }
+        .bg-warning { background: var(--warning-bg); }
+        .bg-danger { background: var(--danger-bg); }
+        
+        .mono { font-family: var(--font-mono); }
+
+        .font-mono { font-family: var(--font-mono); }
+
+        .fw-bold { font-weight: 700; }
+
+        .text-center { text-align: center; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .user-avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .content-area {
+                padding: var(--space-lg);
+            }
+
+            .page-title {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .content-area {
+                padding: var(--space-md);
+            }
+
+            #toast-container {
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Print Styles */
+        @media print {
+            .sidebar,
+            .top-bar,
+            .mobile-menu-btn,
+            .btn,
+            .no-print {
+                display: none !important;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            body {
+                background: white;
+                color: black;
+            }
+        }
+    </style>
+    
+    {% block head_extras %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">JUJU FX</div>
+                <div class="version">v10.0.0</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <!-- Main Section -->
+                <div class="nav-section">MAIN</div>
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('master_dashboard') }}" class="nav-item {% if request.endpoint == 'master_dashboard' %}active{% endif %}">
+                    <i class="fas fa-crown"></i>
+                    <span>Master Control</span>
+                    {% if session.get('user_type') in ['admin', 'ib'] %}
+                        <span class="badge badge-success">IB</span>
+                    {% endif %}
+                </a>
+                
+                <!-- Trading Section -->
+                <div class="nav-section">TRADING</div>
+                <a href="{{ url_for('performance_page') }}" class="nav-item {% if request.endpoint == 'performance_page' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Performance</span>
+                </a>
+                <a href="{{ url_for('trades_page') }}" class="nav-item {% if request.endpoint == 'trades_page' %}active{% endif %}">
+                    <i class="fas fa-history"></i>
+                    <span>Trades</span>
+                    <span class="badge" id="nav-trade-count" style="display: none;">0</span>
+                </a>
+                <a href="{{ url_for('analytics') }}" class="nav-item {% if request.endpoint == 'analytics' %}active{% endif %}">
+                    <i class="fas fa-brain"></i>
+                    <span>Analytics</span>
+                </a>
+                
+                <!-- Account Section -->
+                <div class="nav-section">ACCOUNT</div>
+                <a href="{{ url_for('profile_page') }}" class="nav-item {% if request.endpoint == 'profile_page' %}active{% endif %}">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+                <a href="{{ url_for('settings_page') }}" class="nav-item {% if request.endpoint == 'settings_page' %}active{% endif %}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                
+                <!-- Information Section -->
+                <div class="nav-section">INFORMATION</div>
+                <a href="{{ url_for('news_page') }}" class="nav-item {% if request.endpoint == 'news_page' %}active{% endif %}">
+                    <i class="fas fa-newspaper"></i>
+                    <span>News</span>
+                </a>
+                
+                <!-- System Section (Admin Only) -->
+                {% if session.get('user_type') in ['admin', 'ib'] %}
+                <div class="nav-section">SYSTEM</div>
+                <a href="{{ url_for('system_health') }}" class="nav-item {% if request.endpoint == 'system_health' %}active{% endif %}">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Health</span>
+                </a>
+                {% endif %}
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-indicator">
+                        <span class="status-dot online" id="system-status-dot"></span>
+                        <span class="status-text" id="system-status-text">System Online</span>
+                    </div>
+                    <div class="footer-clock" id="live-clock"></div>
+                </div>
+                <div style="font-size: 0.6rem; color: var(--text-muted); text-align: center; margin-top: var(--space-sm);">
+                    &copy; {{ current_year }} JUJU FX
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="page-title">
+                    <i class="fas fa-{% block page_icon %}home{% endblock %}"></i>
+                    {% block page_title %}Dashboard{% endblock %}
+                </div>
+                
+                <div class="top-bar-right">
+                    <button class="mobile-menu-btn" id="mobileMenuBtn" title="Toggle Menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <div class="user-menu" id="userMenu" onclick="window.location.href='{{ url_for('profile_page') }}'">
+                        <div class="user-avatar">
+                            {% if session.get('username') %}
+                                {{ session.username[:1].upper() }}
+                            {% else %}
+                                <i class="fas fa-user"></i>
+                            {% endif %}
+                        </div>
+                        <div class="user-info">
+                            <span class="user-name">
+                                {% if session.get('username') %}
+                                    {{ session.username }}
+                                {% else %}
+                                    Guest
+                                {% endif %}
+                            </span>
+                            <span class="user-role">
+                                {% if session.get('user_type') %}
+                                    {{ session.user_type|title }}
+                                {% else %}
+                                    Not Logged In
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('logout') }}" class="mobile-menu-btn" title="Logout" style="width: 40px;">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- =========================================== -->
+    <!-- BASE JAVASCRIPT - PRODUCTION READY          -->
+    <!-- =========================================== -->
+    <script>
+    (function() {
+        // ===========================================
+        // Global Configuration - SINGLE SOURCE OF TRUTH
+        // ===========================================
+        window.JUJU = window.JUJU || {};
+        
+        window.JUJU.config = {
+            csrfToken: '{{ csrf_token if csrf_token else "" }}',
+            websocketEnabled: {% if websocket_enabled %}true{% else %}false{% endif %},
+            currentLevel: {{ current_level|default(5) }},
+            debug: {% if config.get('DEBUG', False) %}true{% else %}false{% endif %}
+        };
+
+        // ===========================================
+        // Clock Update
+        // ===========================================
+        function updateClock() {
+            const clockElement = document.getElementById('live-clock');
+            if (clockElement) {
+                const now = new Date();
+                clockElement.textContent = now.toLocaleTimeString('en-ZA', { 
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+        }
+
+        // Start clock immediately
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ===========================================
+        // Mobile Menu
+        // ===========================================
+        function initMobileMenu() {
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+            
+            if (menuBtn && sidebar) {
+                // Remove any existing listeners by cloning
+                const newMenuBtn = menuBtn.cloneNode(true);
+                menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
+                
+                newMenuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    sidebar.classList.toggle('open');
+                });
+                
+                // Close sidebar when clicking outside on mobile
+                document.addEventListener('click', (e) => {
+                    if (window.innerWidth <= 768 && 
+                        sidebar.classList.contains('open') && 
+                        !sidebar.contains(e.target) && 
+                        !newMenuBtn.contains(e.target)) {
+                        sidebar.classList.remove('open');
+                    }
+                });
+            }
+        }
+
+        // ===========================================
+        // CSRF Token Helper
+        // ===========================================
+        window.JUJU.getCsrfToken = function() {
+            return window.JUJU.config.csrfToken || 
+                   document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                   '';
+        };
+
+        // ===========================================
+        // Fetch with CSRF
+        // ===========================================
+        window.JUJU.fetch = async function(url, options = {}) {
+            const csrfToken = window.JUJU.getCsrfToken();
+            
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...options.headers
+                },
+                credentials: 'same-origin'
+            };
+            
+            try {
+                const response = await fetch(url, { ...defaultOptions, ...options });
+                
+                if (response.status === 401) {
+                    window.location.href = '{{ url_for("login") }}';
+                    return null;
+                }
+                
+                return response;
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        };
+
+        // ===========================================
+        // Toast Notification System
+        // ===========================================
+        window.JUJU.toast = function(type, message, duration = 3000) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'check-circle',
+                error: 'exclamation-circle',
+                warning: 'exclamation-triangle',
+                info: 'info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas fa-${icons[type] || 'info-circle'}"></i>
+                <span>${window.JUJU.escapeHtml(message)}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        };
+
+        // ===========================================
+        // HTML Escape Helper
+        // ===========================================
+        window.JUJU.escapeHtml = function(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+
+        // ===========================================
+        // WebSocket Manager (if enabled)
+        // ===========================================
+        window.JUJU.ws = {
+            socket: null,
+            listeners: new Map(),
+            reconnectAttempts: 0,
+            maxReconnect: 5,
+            
+            init: function() {
+                if (!window.JUJU.config.websocketEnabled) {
+                    console.log('WebSocket disabled');
+                    this.updateStatus('disabled');
+                    return;
+                }
+                
+                try {
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${protocol}//${window.location.host}/ws/trading`;
+                    
+                    this.socket = new WebSocket(wsUrl);
+                    
+                    this.socket.onopen = () => {
+                        console.log('✅ WebSocket connected');
+                        this.reconnectAttempts = 0;
+                        this.updateStatus('connected');
+                        this.emit('connected', null);
+                    };
+                    
+                    this.socket.onmessage = (e) => {
+                        try {
+                            const data = JSON.parse(e.data);
+                            this.emit(data.type, data.payload);
+                        } catch (err) {
+                            console.error('WS message error:', err);
+                        }
+                    };
+                    
+                    this.socket.onclose = () => {
+                        console.log('❌ WebSocket closed');
+                        this.updateStatus('disconnected');
+                        this.reconnect();
+                    };
+                    
+                    this.socket.onerror = (error) => {
+                        console.log('⚠️ WebSocket error:', error);
+                        this.updateStatus('error');
+                    };
+                    
+                } catch (error) {
+                    console.log('❌ WebSocket init error:', error);
+                    this.updateStatus('failed');
+                }
+            },
+            
+            reconnect: function() {
+                if (this.reconnectAttempts < this.maxReconnect) {
+                    this.reconnectAttempts++;
+                    const delay = this.reconnectAttempts * 2000;
+                    console.log(`🔄 Reconnecting in ${delay/1000}s...`);
+                    setTimeout(() => this.init(), delay);
+                }
+            },
+            
+            updateStatus: function(status) {
+                const dot = document.getElementById('system-status-dot');
+                const text = document.getElementById('system-status-text');
+                
+                if (status === 'connected') {
+                    if (dot) dot.className = 'status-dot online';
+                    if (text) text.textContent = 'System Online';
+                } else if (status === 'disabled') {
+                    if (dot) dot.className = 'status-dot warning';
+                    if (text) text.textContent = 'WebSocket Disabled';
+                } else {
+                    if (dot) dot.className = 'status-dot offline';
+                    if (text) text.textContent = 'Offline Mode';
+                }
+            },
+            
+            on: function(event, callback) {
+                if (!this.listeners.has(event)) {
+                    this.listeners.set(event, []);
+                }
+                this.listeners.get(event).push(callback);
+            },
+            
+            emit: function(event, data) {
+                if (this.listeners.has(event)) {
+                    this.listeners.get(event).forEach(cb => {
+                        try { cb(data); } catch (err) { console.error(err); }
+                    });
+                }
+            },
+            
+            send: function(type, payload) {
+                if (this.socket?.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify({ 
+                        type, 
+                        payload,
+                        csrf_token: window.JUJU.config.csrfToken
+                    }));
+                    return true;
+                }
+                return false;
+            }
+        };
+
+        // ===========================================
+        // System Status Check
+        // ===========================================
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch('/health');
+                if (response.ok) {
+                    const dot = document.getElementById('system-status-dot');
+                    const text = document.getElementById('system-status-text');
+                    if (dot) dot.className = 'status-dot online';
+                    if (text) text.textContent = 'System Online';
+                } else {
+                    throw new Error('Health check failed');
+                }
+            } catch (error) {
+                const dot = document.getElementById('system-status-dot');
+                const text = document.getElementById('system-status-text');
+                if (dot) dot.className = 'status-dot offline';
+                if (text) text.textContent = 'System Offline';
+            }
+        }
+
+        // ===========================================
+        // Initialize Everything
+        // ===========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('JUJU FX initialized', window.JUJU.config);
+            
+            initMobileMenu();
+            checkSystemStatus();
+            setInterval(checkSystemStatus, 30000);
+            
+            if (window.JUJU.config.websocketEnabled) {
+                window.JUJU.ws.init();
+            }
+            
+            // Mark as initialized
+            window.JUJU.initialized = true;
+        });
+
+        // ===========================================
+        // Handle sidebar active state
+        // ===========================================
+        (function setInitialActive() {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const href = item.getAttribute('href');
+                if (href === currentPath) {
+                    item.classList.add('active');
+                }
+            });
+        })();
+    })();
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

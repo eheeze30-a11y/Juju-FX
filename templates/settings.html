@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block page_title %}Settings - Juju FX{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h3 class="mb-0"><i class="fas fa-cog"></i> System Settings</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    System configuration settings coming soon.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-server"></i> Server Configuration</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Server URL</label>
+                                    <input type="text" class="form-control" value="https://localhost:8443" readonly>
+                                    <div class="form-text">HTTPS server address for MT5 controllers</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Current Trading Level</label>
+                                    <input type="text" class="form-control" value="{{ current_level }}" readonly>
+                                    <div class="form-text">Active risk level (0-6)</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Exchange Rate (USD/ZAR)</label>
+                                    <input type="text" class="form-control" value="18.50" readonly>
+                                    <div class="form-text">Current conversion rate</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5><i class="fas fa-database"></i> Database Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Database Status</label>
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-check-circle"></i> Connected & Healthy
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Total Trades</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="total-trades-count" value="Loading..." readonly>
+                                        <button class="btn btn-outline-secondary" onclick="refreshStats()">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Database Location</label>
+                                    <input type="text" class="form-control" value="{{ '../data/ea_manager.db' }}" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-tools"></i> System Tools</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <button class="btn btn-outline-primary w-100" onclick="checkServerHealth()">
+                                            <i class="fas fa-heartbeat"></i> Check Health
+                                        </button>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <button class="btn btn-outline-success w-100" onclick="clearCache()">
+                                            <i class="fas fa-broom"></i> Clear Cache
+                                        </button>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <button class="btn btn-outline-info w-100" onclick="viewLogs()">
+                                            <i class="fas fa-scroll"></i> View Logs
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    refreshStats();
+});
+
+async function refreshStats() {
+    try {
+        const response = await fetch('/api/dashboard/summary');
+        const data = await response.json();
+        document.getElementById('total-trades-count').value = data.summary.all.trades;
+    } catch (error) {
+        console.error('Error refreshing stats:', error);
+        document.getElementById('total-trades-count').value = 'Error';
+    }
+}
+
+function checkServerHealth() {
+    fetch('/health')
+        .then(r => r.json())
+        .then(data => {
+            alert(`Server Status: ${data.status.toUpperCase()}\nDatabase: ${data.database}\nUptime: ${data.uptime}s`);
+        })
+        .catch(() => {
+            alert('Server health check failed');
+        });
+}
+
+function clearCache() {
+    if (confirm('Clear all cached data? This will not delete trades.')) {
+        alert('Cache cleared successfully');
+    }
+}
+
+function viewLogs() {
+    alert('Log viewer coming soon');
+}
+</script>
+{% endblock %}

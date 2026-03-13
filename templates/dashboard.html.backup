@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EA Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-success">
+            <h4><i class="bi bi-check-circle-fill"></i> HTTPS Server Active</h4>
+            <p class="mb-0">✅ SSL Certificate: Working (self-signed)<br>
+            ✅ Server: Running on port 8443<br>
+            ✅ Authentication: Logged in as <strong>{{ username }}</strong></p>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-sliders"></i> Current Level Control</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <h1 id="currentLevel">0</h1>
+                    <p class="text-muted">Current Trading Level</p>
+                </div>
+                <div class="row">
+                    {% for level in range(0, 7) %}
+                    <div class="col-4 mb-2">
+                        <button class="btn btn-outline-primary w-100 level-btn" data-level="{{ level }}">
+                            Level {{ level }}
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Quick Stats</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 id="totalTrades">0</h3>
+                                <small>Total Trades</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 id="winRate">0%</h3>
+                                <small>Win Rate</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 id="totalPnlUSD">$0</h3>
+                                <small>Total P/L (USD)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 id="totalPnlZAR">R0</h3>
+                                <small>Total P/L (ZAR)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="recentTrades">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Volume</th>
+                                <th>P/L (USD)</th>
+                                <th>Level</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No trades recorded yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load current level on page load
+fetch('/api/level')
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('currentLevel').textContent = data.level;
+        }
+    });
+
+// Level buttons
+document.querySelectorAll('.level-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const level = this.getAttribute('data-level');
+        
+        fetch('/api/set_level', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ level: parseInt(level) })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('currentLevel').textContent = data.level;
+                alert('Level ' + data.level + ' activated!');
+            }
+        });
+    });
+});
+
+// Load performance data
+function loadPerformance() {
+    fetch('/api/performance?period=today')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalTrades').textContent = data.total_trades;
+            document.getElementById('winRate').textContent = data.win_rate.toFixed(1) + '%';
+            document.getElementById('totalPnlUSD').textContent = '$' + data.total_pnl_usd.toFixed(2);
+            document.getElementById('totalPnlZAR').textContent = 'R' + data.total_pnl_zar.toFixed(2);
+        });
+}
+
+// Load on page load and every 30 seconds
+loadPerformance();
+setInterval(loadPerformance, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,157 @@
+/* static/css/dashboard.css - Dashboard specific styles */
+
+/* Level Controls */
+.level-btn {
+    padding: 15px 10px;
+    border: 2px solid #dee2e6;
+    background: white;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.level-btn:hover {
+    border-color: #4361ee;
+    color: #4361ee;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.1);
+}
+
+.level-btn.active {
+    background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    color: white;
+    border-color: #4361ee;
+    box-shadow: 0 5px 15px rgba(67, 97, 238, 0.2);
+}
+
+.level-btn.level-0 { border-left: 4px solid #6c757d; }
+.level-btn.level-1 { border-left: 4px solid #20c997; }
+.level-btn.level-2 { border-left: 4px solid #0dcaf0; }
+.level-btn.level-3 { border-left: 4px solid #4361ee; }
+.level-btn.level-4 { border-left: 4px solid #6610f2; }
+.level-btn.level-5 { border-left: 4px solid #fd7e14; }
+.level-btn.level-6 { border-left: 4px solid #dc3545; }
+
+/* P/L Indicators */
+.pl-positive {
+    color: #198754;
+    font-weight: 600;
+}
+
+.pl-negative {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.pl-neutral {
+    color: #6c757d;
+    font-weight: 600;
+}
+
+/* Trade Table */
+.trade-row-win {
+    background-color: rgba(25, 135, 84, 0.05) !important;
+    border-left: 4px solid #198754;
+}
+
+.trade-row-loss {
+    background-color: rgba(220, 53, 69, 0.05) !important;
+    border-left: 4px solid #dc3545;
+}
+
+.trade-row-even {
+    background-color: rgba(108, 117, 125, 0.05) !important;
+    border-left: 4px solid #6c757d;
+}
+
+/* Chart Containers */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Loading States */
+.loading-spinner {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    vertical-align: -0.125em;
+    border: 0.25em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}
+
+/* Stats Cards */
+.stat-card {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.stat-card .card-body {
+    padding: 1.5rem;
+}
+
+.stat-card-icon {
+    font-size: 2.5rem;
+    opacity: 0.2;
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .level-buttons {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+    }
+    
+    .level-btn {
+        padding: 12px 5px;
+        font-size: 13px;
+    }
+    
+    .stat-card {
+        margin-bottom: 15px;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .stat-card {
+        background-color: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .level-btn {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .level-btn:hover {
+        border-color: #4361ee;
+        color: #4361ee;
+    }
+}

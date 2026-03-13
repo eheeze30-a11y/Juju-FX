@@ -1,0 +1,24 @@
+[0;1;32m●[0m juju-dashboard.service - Juju FX Trading Dashboard
+     Loaded: loaded (]8;;file://ubuntu-s-1vcpu-1gb-nyc3-01/etc/systemd/system/juju-dashboard.service/etc/systemd/system/juju-dashboard.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Tue 2026-03-03 11:57:20 UTC; 15s ago
+   Main PID: 17687 (gunicorn)
+      Tasks: 6 (limit: 1110)
+     Memory: 89.0M (peak: 89.3M)
+        CPU: 1.529s
+     CGroup: /system.slice/juju-dashboard.service
+             ├─[0;38;5;245m17687 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+             ├─[0;38;5;245m17689 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+             ├─[0;38;5;245m17690 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+             ├─[0;38;5;245m17691 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+             └─[0;38;5;245m17692 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+
+Mar 03 11:57:20 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17691]: [2026-03-03 11:57:20 +0000] [17691] [INFO] Booting worker with pid: 17691
+Mar 03 11:57:21 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17692]: [2026-03-03 11:57:21 +0000] [17692] [INFO] Booting worker with pid: 17692
+Mar 03 11:57:22 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17689]: 2026-03-03 11:57:22,114 - WARNING - [WARN] flask-sock not installed. Running in HTTP-only mode.
+Mar 03 11:57:22 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17689]: 2026-03-03 11:57:22,114 - INFO - [STATS] Loaded saved level: 0
+Mar 03 11:57:22 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17692]: 2026-03-03 11:57:22,142 - WARNING - [WARN] flask-sock not installed. Running in HTTP-only mode.
+Mar 03 11:57:22 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17692]: 2026-03-03 11:57:22,147 - INFO - [STATS] Loaded saved level: 0
+Mar 03 11:57:22 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17690]: 2026-03-03 11:57:22,167 - WARNING - [WARN] flask-sock not installed. Running in HTTP-only mode.
+Mar 03 11:57:22 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17690]: 2026-03-03 11:57:22,172 - INFO - [STATS] Loaded saved level: 0
+Mar 03 11:57:22 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17691]: 2026-03-03 11:57:22,186 - WARNING - [WARN] flask-sock not installed. Running in HTTP-only mode.
+Mar 03 11:57:22 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[17691]: 2026-03-03 11:57:22,186 - INFO - [STATS] Loaded saved level: 0

@@ -1,0 +1,40 @@
+[
+  {
+    "ticket": 1001,
+    "symbol": "EURUSD",
+    "type": "buy",
+    "volume": 1.0,
+    "open_price": 1.085,
+    "close_price": 1.0875,
+    "open_time": "2026-01-31 10:30:00",
+    "close_time": "2026-01-31 14:45:00",
+    "profit": 25.0,
+    "swap": -0.5,
+    "commission": 5.0,
+    "magic_number": 10001,
+    "comment": "Discount Zone L1",
+    "level": 1,
+    "proxy_received": "2026-02-04T16:52:01.067333",
+    "proxy_version": "1.0",
+    "stored_locally": true
+  },
+  {
+    "ticket": 1002,
+    "symbol": "XAUUSD",
+    "type": "sell",
+    "volume": 0.5,
+    "open_price": 2035.5,
+    "close_price": 2030.25,
+    "open_time": "2026-01-31 11:15:00",
+    "close_time": "2026-01-31 15:30:00",
+    "profit": -262.5,
+    "swap": -1.25,
+    "commission": 7.5,
+    "magic_number": 10002,
+    "comment": "Discount Zone L2",
+    "level": 2,
+    "proxy_received": "2026-02-04T16:52:05.110313",
+    "proxy_version": "1.0",
+    "stored_locally": true
+  }
+]

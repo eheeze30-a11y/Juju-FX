@@ -1,0 +1,23 @@
+[0;1;32m●[0m juju-dashboard.service - Juju FX Trading Dashboard
+     Loaded: loaded (]8;;file://ubuntu-s-1vcpu-1gb-nyc3-01/etc/systemd/system/juju-dashboard.service/etc/systemd/system/juju-dashboard.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Tue 2026-03-03 15:10:04 UTC; 31s ago
+   Main PID: 3176 (gunicorn)
+      Tasks: 6 (limit: 1107)
+     Memory: 84.1M (peak: 84.4M)
+        CPU: 1.506s
+     CGroup: /system.slice/juju-dashboard.service
+             ├─[0;38;5;245m3176 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+             ├─[0;38;5;245m3178 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+             ├─[0;38;5;245m3179 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+             ├─[0;38;5;245m3180 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+             └─[0;38;5;245m3181 /var/www/juju-dashboard/venv/bin/python3 /var/www/juju-dashboard/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app[0m
+
+Mar 03 15:10:04 ubuntu-s-1vcpu-1gb-nyc3-01 systemd[1]: Started juju-dashboard.service - Juju FX Trading Dashboard.
+Mar 03 15:10:05 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[3176]: [2026-03-03 15:10:05 +0000] [3176] [INFO] Starting gunicorn 25.1.0
+Mar 03 15:10:05 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[3176]: [2026-03-03 15:10:05 +0000] [3176] [INFO] Listening at: http://127.0.0.1:8000 (3176)
+Mar 03 15:10:05 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[3176]: [2026-03-03 15:10:05 +0000] [3176] [INFO] Using worker: sync
+Mar 03 15:10:05 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[3176]: [2026-03-03 15:10:05 +0000] [3176] [INFO] Control socket listening at /var/www/juju-dashboard/gunicorn.ctl
+Mar 03 15:10:05 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[3178]: [2026-03-03 15:10:05 +0000] [3178] [INFO] Booting worker with pid: 3178
+Mar 03 15:10:05 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[3179]: [2026-03-03 15:10:05 +0000] [3179] [INFO] Booting worker with pid: 3179
+Mar 03 15:10:05 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[3180]: [2026-03-03 15:10:05 +0000] [3180] [INFO] Booting worker with pid: 3180
+Mar 03 15:10:05 ubuntu-s-1vcpu-1gb-nyc3-01 gunicorn[3181]: [2026-03-03 15:10:05 +0000] [3181] [INFO] Booting worker with pid: 3181

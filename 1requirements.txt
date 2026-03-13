@@ -1,0 +1,8 @@
+flask==2.3.3
+flask-cors==4.0.0
+werkzeug==2.3.7
+gunicorn==20.1.0  # For production
+python-dotenv==1.0.0  # For environment variables
+requests==2.31.0  # For news API integration
+pandas==2.0.3  # For data analysis
+plotly==5.17.0  # For charts (optional)

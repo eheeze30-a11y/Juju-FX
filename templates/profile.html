@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block page_title %}Profile - {{ username }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="fas fa-user-circle"></i> User Profile</h3>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-circle fa-5x text-primary"></i>
+                </div>
+                <h4>{{ username }}</h4>
+                <p class="text-muted">Administrator</p>
+                <div class="small text-muted">
+                    <i class="fas fa-shield-alt"></i> HTTPS Account<br>
+                    <i class="fas fa-clock"></i> Member since: {{ now.strftime('%Y-%m-%d') }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-cogs"></i> Account Settings</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    Profile management features coming soon.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5><i class="fas fa-key"></i> Security</h5>
+                                <p class="text-muted small">Change password and security settings</p>
+                                <button class="btn btn-outline-primary btn-sm" disabled>
+                                    Coming Soon
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5><i class="fas fa-bell"></i> Notifications</h5>
+                                <p class="text-muted small">Configure email and alert preferences</p>
+                                <button class="btn btn-outline-primary btn-sm" disabled>
+                                    Coming Soon
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5><i class="fas fa-chart-line"></i> Trading Preferences</h5>
+                                <p class="text-muted small">Set default trading parameters</p>
+                                <button class="btn btn-outline-primary btn-sm" disabled>
+                                    Coming Soon
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5><i class="fas fa-download"></i> Data Export</h5>
+                                <p class="text-muted small">Export your trading history</p>
+                                <button class="btn btn-outline-primary btn-sm" onclick="exportProfileData()">
+                                    <i class="fas fa-download"></i> Export Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function exportProfileData() {
+    fetch('/api/dashboard/summary')
+        .then(r => r.json())
+        .then(data => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `juju-fx-profile-${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            alert('Profile data exported successfully!');
+        })
+        .catch(error => {
+            console.error('Export error:', error);
+            alert('Failed to export data');
+        });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1089 @@
+{% extends "base.html" %}
+
+{% block page_title %}Analytics{% endblock %}
+
+{% block head_extras %}
+<style>
+/* Analytics Page Specific Styles */
+.analytics-header {
+    margin-bottom: 32px;
+}
+
+.analytics-title {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.analytics-subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+/* Period Selector */
+.period-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    background: var(--bg-secondary);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    width: fit-content;
+}
+
+.period-btn {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.period-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.period-btn.active {
+    background: var(--accent-primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+/* Stats Grid */
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.stat-tile {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+.stat-tile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-gradient);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.stat-tile:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hover);
+    box-shadow: var(--card-shadow-lg);
+}
+
+.stat-tile:hover::before {
+    opacity: 1;
+}
+
+.stat-tile.primary::before { background: var(--accent-primary); }
+.stat-tile.success::before { background: var(--success-color); }
+.stat-tile.warning::before { background: var(--warning-color); }
+.stat-tile.info::before { background: var(--accent-secondary); }
+
+.stat-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.stat-tile.primary .stat-icon-wrap { background: var(--info-bg); color: var(--info-color); }
+.stat-tile.success .stat-icon-wrap { background: var(--success-bg); color: var(--success-color); }
+.stat-tile.warning .stat-icon-wrap { background: var(--warning-bg); color: var(--warning-color); }
+.stat-tile.info .stat-icon-wrap { background: rgba(139, 92, 246, 0.1); color: var(--accent-secondary); }
+
+.stat-value-lg {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    margin-bottom: 4px;
+    line-height: 1;
+}
+
+.stat-label-sm {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    background: var(--success-bg);
+    color: var(--success-color);
+}
+
+.stat-change.negative {
+    background: var(--danger-bg);
+    color: var(--danger-color);
+}
+
+/* Charts Section */
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.chart-panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all var(--transition-base);
+}
+
+.chart-panel:hover {
+    border-color: var(--border-hover);
+}
+
+.chart-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.chart-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-action-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+
+.chart-canvas-container {
+    position: relative;
+    height: 280px;
+}
+
+/* Trades Section */
+.trades-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.view-all-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.view-all-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+
+/* Table Styles */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table thead th {
+    text-align: left;
+    padding: 12px 16px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+    background: rgba(148, 163, 184, 0.05);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table td {
+    padding: 16px;
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.cell-time {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.cell-symbol {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+.cell-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.cell-type.buy {
+    background: var(--success-bg);
+    color: var(--success-color);
+}
+
+.cell-type.sell {
+    background: var(--danger-bg);
+    color: var(--danger-color);
+}
+
+.cell-level {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.cell-pl {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    text-align: right;
+}
+
+.cell-pl.positive {
+    color: var(--success-color);
+}
+
+.cell-pl.negative {
+    color: var(--danger-color);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+/* Loading Skeleton */
+.skeleton-row td {
+    padding: 16px;
+}
+
+.skeleton-text {
+    height: 16px;
+    background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-text.short { width: 60%; }
+.skeleton-text.medium { width: 80%; }
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Live Indicator */
+.live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--success-bg);
+    color: var(--success-color);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 20px;
+    margin-left: auto;
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--success-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Toast Container */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background: var(--bg-secondary);
+    border-left: 4px solid var(--success-color);
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow-lg);
+    color: var(--text-primary);
+    animation: slideIn 0.3s ease;
+}
+
+.toast-error { border-left-color: var(--danger-color); }
+.toast-success { border-left-color: var(--success-color); }
+.toast-info { border-left-color: var(--info-color); }
+.toast-warning { border-left-color: var(--warning-color); }
+
+/* Animations */
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .stats-overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-overview {
+        grid-template-columns: 1fr;
+    }
+    
+    .period-selector {
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    .data-table {
+        font-size: 13px;
+    }
+    
+    .data-table td {
+        padding: 12px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="analytics-header">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <h1 class="analytics-title">Trading Analytics</h1>
+            <p class="analytics-subtitle">Comprehensive performance metrics and insights</p>
+        </div>
+        <div class="live-pill" id="live-indicator" style="display: none;">
+            <span class="live-dot"></span>
+            <span>LIVE</span>
+        </div>
+    </div>
+</div>
+
+<!-- Period Selector -->
+<div class="period-selector">
+    <button onclick="loadAnalytics('day')" data-period="day" class="period-btn">Today</button>
+    <button onclick="loadAnalytics('week')" data-period="week" class="period-btn">Week</button>
+    <button onclick="loadAnalytics('month')" data-period="month" class="period-btn">Month</button>
+    <button onclick="loadAnalytics('all')" data-period="all" class="period-btn active">All Time</button>
+</div>
+
+<!-- Stats Overview -->
+<div class="stats-overview">
+    <div class="stat-tile primary">
+        <div class="stat-icon-wrap">
+            <i class="fas fa-exchange-alt"></i>
+        </div>
+        <div class="stat-value-lg" id="stat-trades">0</div>
+        <div class="stat-label-sm">Total Trades</div>
+        <div class="stat-change" id="trades-change">
+            <i class="fas fa-minus"></i>
+            <span>--</span>
+        </div>
+    </div>
+
+    <div class="stat-tile success">
+        <div class="stat-icon-wrap">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <div class="stat-value-lg" id="stat-winrate">0%</div>
+        <div class="stat-label-sm">Win Rate</div>
+        <div class="stat-change" id="winrate-change">
+            <i class="fas fa-minus"></i>
+            <span>--</span>
+        </div>
+    </div>
+
+    <div class="stat-tile warning">
+        <div class="stat-icon-wrap">
+            <i class="fas fa-coins"></i>
+        </div>
+        <div class="stat-value-lg" id="stat-pnl">R 0.00</div>
+        <div class="stat-label-sm">Total P/L</div>
+        <div class="stat-change" id="pnl-change">
+            <i class="fas fa-minus"></i>
+            <span>--</span>
+        </div>
+    </div>
+
+    <div class="stat-tile info">
+        <div class="stat-icon-wrap">
+            <i class="fas fa-layer-group"></i>
+        </div>
+        <div class="stat-value-lg" id="stat-level">L0</div>
+        <div class="stat-label-sm">Best Level</div>
+        <div class="stat-change" id="level-change">
+            <i class="fas fa-minus"></i>
+            <span>--</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="charts-section">
+    <div class="chart-panel">
+        <div class="chart-header-flex">
+            <h3 class="chart-title">
+                <i class="fas fa-chart-bar text-info"></i>
+                Performance by Level
+            </h3>
+            <div class="chart-actions">
+                <button class="chart-action-btn" onclick="downloadChart('levelChart')" title="Download">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="chart-action-btn" onclick="refreshAnalytics()" title="Refresh">
+                    <i class="fas fa-sync-alt" id="refresh-icon"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="levelChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-panel">
+        <div class="chart-header-flex">
+            <h3 class="chart-title">
+                <i class="fas fa-globe text-success"></i>
+                Top Symbols
+            </h3>
+            <div class="chart-actions">
+                <button class="chart-action-btn" onclick="downloadChart('symbolChart')" title="Download">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="chart-action-btn" onclick="refreshAnalytics()" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chart-canvas-container">
+            <canvas id="symbolChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Trades Section -->
+<div class="trades-section">
+    <div class="section-header">
+        <h3 class="section-title">Recent Trading Activity</h3>
+        <a href="{{ url_for('trades_page') }}" class="view-all-btn">
+            View All <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Symbol</th>
+                    <th>Type</th>
+                    <th>Level</th>
+                    <th style="text-align: right;">P/L (ZAR)</th>
+                </tr>
+            </thead>
+            <tbody id="trades-body">
+                <tr class="skeleton-row">
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text medium"></div></td>
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text medium"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text medium"></div></td>
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text medium"></div></td>
+                </tr>
+                <tr class="skeleton-row">
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text medium"></div></td>
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text short"></div></td>
+                    <td><div class="skeleton-text medium"></div></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ===========================================
+// ANALYTICS PAGE - UPDATED FOR JUJU NAMESPACE
+// ===========================================
+
+let levelChart = null;
+let symbolChart = null;
+let currentPeriod = 'all';
+let autoRefreshInterval = null;
+let lastDataHash = '';
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalytics('all');
+    startAutoRefresh();
+    
+    // Listen for global refresh events from other tabs
+    window.addEventListener('storage', handleStorageEvent);
+    
+    // Visibility API - pause refresh when tab hidden
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+});
+
+// Auto-refresh every 30 seconds
+function startAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    const liveIndicator = document.getElementById('live-indicator');
+    if (liveIndicator) liveIndicator.style.display = 'inline-flex';
+    
+    autoRefreshInterval = setInterval(() => {
+        if (!document.hidden) {
+            silentRefresh();
+        }
+    }, 30000);
+    
+    console.log('📊 Analytics auto-refresh started');
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+    
+    const liveIndicator = document.getElementById('live-indicator');
+    if (liveIndicator) liveIndicator.style.display = 'none';
+}
+
+function handleVisibilityChange() {
+    if (!document.hidden) {
+        silentRefresh();
+    }
+}
+
+// Silent refresh (no loading indicators)
+async function silentRefresh() {
+    try {
+        const [perfRes, tradesRes, levelsRes] = await Promise.all([
+            fetch(`/api/performance/${currentPeriod}`),
+            fetch('/api/trades/recent'),
+            fetch('/api/performance/levels')
+        ]);
+        
+        if (!perfRes.ok || !tradesRes.ok || !levelsRes.ok) return;
+        
+        const performance = await perfRes.json();
+        const trades = await tradesRes.json();
+        const levels = await levelsRes.json();
+        
+        const newHash = JSON.stringify({p: performance.total_trades, t: trades.trades?.length});
+        if (newHash === lastDataHash) return;
+        lastDataHash = newHash;
+        
+        updateStats(performance, levels, false);
+        updateLevelChart(performance, levels);
+        updateSymbolChart(performance);
+        updateTradesTable(trades);
+        
+    } catch (error) {
+        console.error('Silent refresh error:', error);
+    }
+}
+
+// Storage event - sync across tabs
+function handleStorageEvent(e) {
+    if (e.key === 'trading:refresh' && e.newValue === 'true') {
+        silentRefresh();
+        localStorage.removeItem('trading:refresh');
+    }
+}
+
+// Broadcast refresh to other tabs
+function broadcastRefresh() {
+    localStorage.setItem('trading:refresh', 'true');
+}
+
+async function loadAnalytics(period) {
+    currentPeriod = period;
+    
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.period === period);
+    });
+    
+    showLoading(true);
+    
+    try {
+        const [perfRes, tradesRes, levelsRes] = await Promise.all([
+            fetch(`/api/performance/${period}`),
+            fetch('/api/trades/recent'),
+            fetch('/api/performance/levels')
+        ]);
+        
+        if (!perfRes.ok || !tradesRes.ok || !levelsRes.ok) {
+            throw new Error('Failed to fetch data');
+        }
+        
+        const performance = await perfRes.json();
+        const trades = await tradesRes.json();
+        const levels = await levelsRes.json();
+        
+        lastDataHash = JSON.stringify({p: performance.total_trades, t: trades.trades?.length});
+        
+        updateStats(performance, levels, true);
+        updateLevelChart(performance, levels);
+        updateSymbolChart(performance);
+        updateTradesTable(trades);
+        
+        showToast('success', `Analytics loaded for ${period}`);
+        broadcastRefresh();
+        
+    } catch (error) {
+        console.error('Analytics error:', error);
+        showToast('error', error.message);
+    } finally {
+        showLoading(false);
+    }
+}
+
+function updateStats(perf, levels, animate = true) {
+    const format = (n, d = 0, p = '') => p + n.toLocaleString('en-ZA', {minimumFractionDigits: d, maximumFractionDigits: d});
+    
+    const updateEl = (id, val, formatter) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        
+        if (animate) {
+            animateValue(el, val, formatter);
+        } else {
+            el.textContent = formatter(val);
+            el.dataset.value = val;
+        }
+    };
+    
+    updateEl('stat-trades', perf.total_trades || 0, (v) => format(v, 0));
+    updateEl('stat-winrate', perf.win_rate || 0, (v) => format(v, 1) + '%');
+    updateEl('stat-pnl', perf.total_pnl_zar || 0, (v) => 'R ' + format(v, 2));
+    
+    // Find best level
+    let bestLevel = 0, bestPnl = -Infinity;
+    Object.entries(levels.levels || {}).forEach(([l, d]) => {
+        if ((d.zar || 0) > bestPnl) { 
+            bestPnl = d.zar; 
+            bestLevel = l; 
+        }
+    });
+    
+    const levelEl = document.getElementById('stat-level');
+    if (levelEl) levelEl.textContent = 'L' + bestLevel;
+    
+    updateTrend('trades-change', perf.total_trades > 50 ? 12 : -5);
+    updateTrend('winrate-change', (perf.win_rate || 0) - 50);
+    updateTrend('pnl-change', perf.total_pnl_zar > 0 ? 8 : -3);
+    updateTrend('level-change', bestPnl > 1000 ? 15 : -2, 'value');
+}
+
+function updateTrend(id, value, type = 'percent') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    const isPositive = value >= 0;
+    const icon = isPositive ? 'fa-arrow-up' : (type === 'value' ? 'fa-layer-group' : 'fa-arrow-down');
+    const text = type === 'value' ? (isPositive ? 'Optimal' : 'Review') : Math.abs(value).toFixed(1) + '%';
+    
+    el.className = `stat-change ${isPositive ? '' : 'negative'}`;
+    el.innerHTML = `<i class="fas ${icon}"></i><span>${text}</span>`;
+}
+
+function animateValue(el, target, formatter) {
+    const start = parseFloat(el.dataset.value) || 0;
+    const duration = 800;
+    const startTime = performance.now();
+    
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const current = start + (target - start) * ease;
+        
+        el.textContent = formatter(current);
+        el.dataset.value = current;
+        
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    
+    requestAnimationFrame(update);
+}
+
+function updateLevelChart(perf, levels) {
+    const ctx = document.getElementById('levelChart');
+    if (!ctx) return;
+    
+    if (levelChart) levelChart.destroy();
+    
+    const data = levels.levels || {};
+    const labels = Object.keys(data).map(l => 'Level ' + l);
+    const values = Object.values(data).map(d => d.zar || 0);
+    
+    levelChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'P/L (ZAR)',
+                data: values,
+                backgroundColor: values.map(v => v >= 0 ? '#10b981' : '#ef4444'),
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleColor: '#94a3b8',
+                    bodyColor: '#f8fafc',
+                    borderColor: 'rgba(148, 163, 184, 0.1)',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: (context) => {
+                            const val = context.raw;
+                            return `P/L: ${val >= 0 ? '+' : ''}R ${val.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(148, 163, 184, 0.05)', drawBorder: false },
+                    ticks: { color: '#64748b', callback: (v) => 'R ' + v.toFixed(0) }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8', font: { size: 11 } }
+                }
+            },
+            animation: { duration: 1000, easing: 'easeOutQuart' }
+        }
+    });
+}
+
+function updateSymbolChart(perf) {
+    const ctx = document.getElementById('symbolChart');
+    if (!ctx) return;
+    
+    if (symbolChart) symbolChart.destroy();
+    
+    const sorted = Object.entries(perf.pnl_by_symbol || {})
+        .sort((a, b) => Math.abs(b[1].zar) - Math.abs(a[1].zar))
+        .slice(0, 8);
+    
+    const labels = sorted.map(([s]) => s);
+    const values = sorted.map(([, d]) => d.zar);
+    
+    symbolChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'P/L (ZAR)',
+                data: values,
+                backgroundColor: values.map(v => v >= 0 ? '#10b981' : '#ef4444'),
+                borderRadius: 4,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleColor: '#94a3b8',
+                    bodyColor: '#f8fafc',
+                    borderColor: 'rgba(148, 163, 184, 0.1)',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: (context) => {
+                            const val = context.raw;
+                            return `P/L: ${val >= 0 ? '+' : ''}R ${val.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(148, 163, 184, 0.05)', drawBorder: false },
+                    ticks: { color: '#64748b', callback: (v) => 'R ' + v.toFixed(0) }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8', font: { size: 11, family: 'JetBrains Mono' } }
+                }
+            },
+            animation: { duration: 1000, easing: 'easeOutQuart' }
+        }
+    });
+}
+
+function updateTradesTable(data) {
+    const tbody = document.getElementById('trades-body');
+    if (!tbody) return;
+    
+    const trades = Array.isArray(data) ? data : (data.trades || []);
+    
+    if (trades.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No trades found for this period</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = trades.slice(0, 10).map((t, i) => {
+        const pl = t.profit_zar || 0;
+        const isWin = pl >= 0;
+        
+        return `
+            <tr style="animation: fadeIn 0.3s ease ${i * 50}ms both;">
+                <td class="cell-time">${t.formatted_time || 'N/A'}</td>
+                <td class="cell-symbol">${t.symbol || 'Unknown'}</td>
+                <td>
+                    <span class="cell-type ${t.type || 'buy'}">
+                        <i class="fas fa-arrow-${t.type === 'buy' ? 'up' : 'down'}"></i>
+                        ${t.type ? t.type.toUpperCase() : 'N/A'}
+                    </span>
+                </td>
+                <td><span class="cell-level">L${t.level || 0}</span></td>
+                <td class="cell-pl ${isWin ? 'positive' : 'negative'}">
+                    ${isWin ? '+' : ''}R ${pl.toFixed(2)}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function refreshAnalytics() {
+    const icon = document.getElementById('refresh-icon');
+    if (icon) icon.style.animation = 'spin 1s linear infinite';
+    
+    loadAnalytics(currentPeriod).then(() => {
+        if (icon) icon.style.animation = '';
+    });
+}
+
+function downloadChart(chartId) {
+    const canvas = document.getElementById(chartId);
+    if (!canvas) return;
+    
+    const link = document.createElement('a');
+    link.download = `${chartId}-${new Date().toISOString().split('T')[0]}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+    
+    showToast('success', 'Chart downloaded');
+}
+
+function showLoading(show) {
+    // Optional loading indicator
+}
+
+function showToast(type, message) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Add slideOut animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+`;
+document.head.appendChild(style);
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    stopAutoRefresh();
+});
+</script>
+{% endblock %}
