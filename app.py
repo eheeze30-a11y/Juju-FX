@@ -42,6 +42,13 @@ except ImportError as e:
     print("Install with: pip install flask flask-cors flask-talisman python-dotenv")
     sys.exit(1)
 
+# ===========================================
+# EXPOSE FLASK APP FOR GUNICORN
+# ===========================================
+# Create the app instance at module level for Gunicorn
+from flask import Flask
+app = None  # Will be set after create_app() is called
+
 # Optional WebSocket
 try:
     from flask_sock import Sock
@@ -3053,6 +3060,12 @@ def create_app(config_override: dict = None) -> Flask:
         }
     
     return app
+
+# ===========================================
+# CREATE APP INSTANCE FOR GUNICORN
+# ===========================================
+# This creates the app at module level for Gunicorn to find
+app = create_app()
 
 # ===========================================
 # APPLICATION ENTRY POINT
