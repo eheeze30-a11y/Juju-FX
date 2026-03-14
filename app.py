@@ -3,7 +3,7 @@
 JUJU FX EA Manager v10.0 - COMPLETE PRODUCTION VERSION
 SECURITY FIRST - People's financial well-being depends on this
 All endpoints working, level changes guaranteed
-FIXED: All errors resolved, production ready
+FIXED: PORT environment variable for App Platform
 """
 
 import os
@@ -3143,10 +3143,13 @@ if __name__ == '__main__':
     print(f"\n🚀 Server starting...")
     print("="*70 + "\n")
     
+    # IMPORTANT FIX FOR APP PLATFORM: Use PORT environment variable
+    port = int(os.environ.get('PORT', 8443))
+    
     # Run with production settings
     app.run(
         host='0.0.0.0',
-        port=8443,
+        port=port,
         debug=False,  # NEVER True in production
         threaded=True
     )
